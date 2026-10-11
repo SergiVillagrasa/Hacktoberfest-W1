@@ -111,3 +111,7 @@ export async function removePlayer(deps: RoomDeps, input: { code: string; actorI
     (game, next) => deps.games.save(next, []),
   );
 }
+
+export function mutateGame(games: GameRepository, code: string, change: (game: Game) => Game): Promise<Game> {
+  return updateGame(games, code, change, (game, next) => games.save(next, []));
+}
