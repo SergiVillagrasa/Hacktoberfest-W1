@@ -1,65 +1,65 @@
-/* SnapHunt theme: a chunky, tactile game controller palette tinted from the pug art.
-   HeroUI semantic variables are overridden here; everything else uses the named roles below. */
+/* SnapHunt theme: a clean white, Duolingo-polish game UI with one confident green action,
+   bordered pressed-edge controls and a pug host. HeroUI semantic variables are overridden here. */
 
 :root {
-  --grape: oklch(0.5 0.23 295);
-  --grape-edge: oklch(0.37 0.2 295);
-  --lilac: oklch(0.955 0.035 300);
-  --lilac-deep: oklch(0.86 0.06 300);
-  --lilac-art: #cbbaf4;
-  --lilac-art-edge: oklch(0.7 0.11 298);
+  --leaf: oklch(0.54 0.17 142);
+  --leaf-edge: oklch(0.42 0.14 145);
+  --leaf-soft: oklch(0.96 0.04 145);
+  --ink: oklch(0.27 0.03 160);
+  --ink-soft: oklch(0.5 0.025 160);
+  --line: oklch(0.9 0.008 150);
+  --line-deep: oklch(0.82 0.012 150);
+  --sun: oklch(0.88 0.17 95);
+  --sun-edge: oklch(0.72 0.15 85);
+  --bow: oklch(0.58 0.22 27);
+  --bow-edge: oklch(0.45 0.19 27);
+  --sky: oklch(0.55 0.15 240);
+  --sky-edge: oklch(0.42 0.13 242);
   --fawn: oklch(0.84 0.1 78);
   --fawn-edge: oklch(0.68 0.12 68);
-  --bow: oklch(0.58 0.22 27);
-  --bow-edge: oklch(0.44 0.19 27);
-  --mint: oklch(0.8 0.16 160);
-  --mint-edge: oklch(0.6 0.15 160);
-  --sun: oklch(0.9 0.17 95);
-  --sun-edge: oklch(0.74 0.15 85);
-  --ink: oklch(0.24 0.05 295);
-  --ink-soft: oklch(0.42 0.05 295);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  --font-display: var(--font-fredoka), ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --font-display: var(--font-rubik), ui-rounded, system-ui, sans-serif;
   --font-body: var(--font-nunito), ui-rounded, system-ui, sans-serif;
 
   /* HeroUI semantic mapping */
-  --background: var(--lilac);
+  --background: white;
   --foreground: var(--ink);
   --muted: var(--ink-soft);
-  --accent: var(--grape);
+  --accent: var(--leaf);
   --accent-foreground: white;
-  --success: var(--mint);
-  --success-foreground: var(--ink);
+  --success: var(--leaf);
+  --success-foreground: white;
   --warning: var(--sun);
   --warning-foreground: var(--ink);
   --danger: var(--bow);
   --danger-foreground: white;
-  --default: var(--fawn);
+  --default: var(--leaf-soft);
   --default-foreground: var(--ink);
   --surface: white;
   --surface-foreground: var(--ink);
-  --border: var(--lilac-deep);
-  --separator: var(--lilac-deep);
-  --focus: var(--grape);
+  --border: var(--line);
+  --separator: var(--line);
+  --focus: var(--sky);
   --field-background: white;
   --field-foreground: var(--ink);
   --field-placeholder: var(--ink-soft);
   --field-border-width: 2px;
-  --field-border: var(--lilac-deep);
-  --radius: 1rem;
-  --link: var(--grape);
+  --field-border: var(--line);
+  --radius: 0.875rem;
+  --link: var(--sky);
 }
 
 @theme inline {
-  --color-grape: var(--grape);
-  --color-grape-edge: var(--grape-edge);
-  --color-lilac: var(--lilac);
-  --color-lilac-deep: var(--lilac-deep);
-  --color-fawn: var(--fawn);
-  --color-bow: var(--bow);
-  --color-mint: var(--mint);
+  --color-leaf: var(--leaf);
+  --color-leaf-edge: var(--leaf-edge);
+  --color-leaf-soft: var(--leaf-soft);
+  --color-line: var(--line);
+  --color-line-deep: var(--line-deep);
   --color-sun: var(--sun);
+  --color-bow: var(--bow);
+  --color-sky: var(--sky);
+  --color-fawn: var(--fawn);
   --color-ink: var(--ink);
   --color-ink-soft: var(--ink-soft);
   --font-display: var(--font-display);
@@ -67,7 +67,7 @@
 }
 
 html {
-  background: var(--lilac);
+  background: white;
   color: var(--ink);
   font-family: var(--font-body);
   font-weight: 600;
@@ -76,7 +76,7 @@ html {
 
 body {
   min-height: 100dvh;
-  caret-color: var(--grape);
+  caret-color: var(--sky);
 }
 
 ::selection {
@@ -85,13 +85,13 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--grape);
+  outline: 3px solid var(--sky);
   outline-offset: 3px;
 }
 
 h1, h2, h3, .font-display {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 800;
   text-wrap: balance;
 }
 
@@ -99,26 +99,29 @@ h1, h2, h3, .font-display {
   font-variant-numeric: tabular-nums;
 }
 
-/* Chunky, tactile buttons: a solid darker bottom edge that collapses on press. */
+/* Bordered, tactile controls: a 4px darker bottom edge that collapses on press. */
 .chunky {
-  --chunk-bg: var(--grape);
-  --chunk-edge: var(--grape-edge);
+  --chunk-bg: var(--leaf);
+  --chunk-border: var(--leaf);
+  --chunk-edge: var(--leaf-edge);
   --chunk-fg: white;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 3.75rem;
-  padding: 0 1.5rem;
-  border: 0;
-  border-bottom: 6px solid var(--chunk-edge);
-  border-radius: 1.25rem;
+  min-height: 3.5rem;
+  padding: 0 1.25rem;
+  border: 2px solid var(--chunk-border);
+  border-bottom: 4px solid var(--chunk-edge);
+  border-radius: 0.875rem;
   background: var(--chunk-bg);
   color: var(--chunk-fg);
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-weight: 700;
+  letter-spacing: 0.04em;
   line-height: 1;
+  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   user-select: none;
@@ -127,48 +130,60 @@ h1, h2, h3, .font-display {
 }
 
 .chunky:hover {
-  filter: brightness(1.06);
+  filter: brightness(1.05);
 }
 
 .chunky:active,
 .chunky[data-pressed="true"] {
-  transform: translateY(4px);
-  margin-bottom: 4px;
+  transform: translateY(2px);
+  margin-bottom: 2px;
   border-bottom-width: 2px;
 }
 
 .chunky:disabled,
 .chunky[aria-disabled="true"] {
-  --chunk-bg: var(--lilac-deep);
-  --chunk-edge: oklch(0.76 0.05 300);
+  --chunk-bg: var(--line);
+  --chunk-border: var(--line);
+  --chunk-edge: var(--line-deep);
   --chunk-fg: var(--ink-soft);
   cursor: not-allowed;
   filter: none;
 }
 
 .chunky-secondary {
-  --chunk-bg: var(--fawn);
-  --chunk-edge: var(--fawn-edge);
+  --chunk-bg: white;
+  --chunk-border: var(--line);
+  --chunk-edge: var(--line-deep);
   --chunk-fg: var(--ink);
 }
 
 .chunky-danger {
   --chunk-bg: var(--bow);
+  --chunk-border: var(--bow);
   --chunk-edge: var(--bow-edge);
   --chunk-fg: white;
 }
 
-.chunky-success {
-  --chunk-bg: var(--mint);
-  --chunk-edge: var(--mint-edge);
-  --chunk-fg: var(--ink);
+.chunky-info {
+  --chunk-bg: var(--sky);
+  --chunk-border: var(--sky);
+  --chunk-edge: var(--sky-edge);
+  --chunk-fg: white;
 }
 
-/* Color-block panel in the pug art's lavender, with the same pressed-edge language. */
-.panel {
-  border-radius: 2rem;
-  border-bottom: 6px solid var(--lilac-art-edge);
-  background: var(--lilac-art);
+/* Bordered surface for lists, clues and results. */
+.card {
+  border: 2px solid var(--line);
+  border-bottom-width: 4px;
+  border-bottom-color: var(--line-deep);
+  border-radius: 1rem;
+  background: white;
+}
+
+.card-selected {
+  border-color: var(--leaf);
+  border-bottom-color: var(--leaf-edge);
+  background: var(--leaf-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {
