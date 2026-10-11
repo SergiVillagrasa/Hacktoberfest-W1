@@ -1,6 +1,7 @@
 export interface AudioLike {
   src: string;
   currentTime: number;
+  onended?: ((event: Event) => unknown) | null;
   play(): Promise<void>;
   pause(): void;
 }
@@ -27,10 +28,11 @@ export function unlockAudio(create: () => AudioLike = make): Promise<boolean> {
 }
 
 /** Plays a clue on the element unlocked by the first tap. Resolves false when the browser blocks it, so the UI can fall back to text. */
-export async function playClue(url: string, create: () => AudioLike = make): Promise<boolean> {
+export async function playClue(url: string, create: () => AudioLike = make, onEnd?: () => void): Promise<boolean> {
   shared ??= create();
   shared.src = url;
   shared.currentTime = 0;
+  shared.onended = onEnd ? () => onEnd() : null;
   try {
     await shared.play();
     return true;
@@ -39,9 +41,17 @@ export async function playClue(url: string, create: () => AudioLike = make): Pro
   }
 }
 
+/** Plays one of the static host announcements from `public/voice`. */
+export function playHostClip(name: string, create: () => AudioLike = make, onEnd?: () => void): Promise<boolean> {
+  return playClue(`/voice/${name}.mp3`, create, onEnd);
+}
+
 export function stopClue(): void {
+  if (shared) shared.onended = null;
   shared?.pause();
 }
+
+export const audioUnlocked = () => unlocked;
 
 export function resetAudioForTests(): void {
   shared = null;

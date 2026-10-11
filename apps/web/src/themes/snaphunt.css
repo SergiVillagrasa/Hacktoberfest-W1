@@ -180,6 +180,11 @@ h1, h2, h3, .font-display {
   background: white;
 }
 
+.sh-card-info {
+  border-color: var(--sky);
+  border-bottom-color: var(--sky-edge);
+}
+
 .sh-card-selected {
   border-color: var(--leaf);
   border-bottom-color: var(--leaf-edge);

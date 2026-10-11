@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use, useEffect } from 'react';
+import { Countdown } from '@/components/game/Countdown';
+import { Hunt } from '@/components/game/Hunt';
 import { Lobby } from '@/components/game/Lobby';
 import { Mascot } from '@/components/mascot/Mascot';
 import { ScreenShell } from '@/components/ui/ScreenShell';
@@ -12,7 +14,7 @@ import { getSession } from '@/lib/session';
 export default function RoomPage({ params }: { params: Promise<{ code: string }> }) {
   const code = use(params).code.toUpperCase();
   const router = useRouter();
-  const { view, connected, error, refresh } = useRoomView(code);
+  const { view, connected, error, clockOffsetMs, refresh } = useRoomView(code);
   const token = typeof window === 'undefined' ? null : getSession(code)?.token ?? null;
 
   useEffect(() => {
@@ -47,8 +49,12 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
       ) : null}
       {view.status === 'lobby' ? (
         <Lobby code={code} token={token} view={view} refresh={refresh} />
+      ) : view.status === 'countdown' ? (
+        <Countdown view={view} clockOffsetMs={clockOffsetMs} />
+      ) : view.status === 'active' && view.me.status === 'active' ? (
+        <Hunt code={code} token={token} view={view} clockOffsetMs={clockOffsetMs} refresh={refresh} />
       ) : (
-        <Mascot state="talking" size="md" line="The game has started!" />
+        <Mascot state="talking" size="md" line={view.status === 'finished' ? 'The game is over!' : "You're out of the hunt, but you can watch!"} />
       )}
     </ScreenShell>
   );
