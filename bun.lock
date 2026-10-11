@@ -51,6 +51,9 @@
     "packages/core": {
       "name": "@snaphunt/core",
       "version": "0.0.0",
+      "dependencies": {
+        "@snaphunt/contracts": "workspace:*",
+      },
     },
     "packages/infra": {
       "name": "@snaphunt/infra",
