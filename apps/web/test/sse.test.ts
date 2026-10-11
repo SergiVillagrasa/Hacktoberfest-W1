@@ -113,4 +113,24 @@ describe('connectRoomStream', () => {
     expect(FakeEventSource.instances).toHaveLength(1);
     expect(t.views).toEqual([]);
   });
+
+  test('a rejected session or a missing room on the snapshot request is fatal instead of loading forever', async () => {
+    for (const [status, code] of [[401, 'forbidden'], [403, 'forbidden'], [404, 'not_found']] as const) {
+      FakeEventSource.instances = [];
+      const t = start(vi.fn(async () => Promise.reject(Object.assign(new Error('rejected'), { status }))));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(t.fatal).toEqual([code]);
+      expect(t.es().closed).toBe(true);
+      expect(t.connected.at(-1)).toBe(false);
+      await vi.advanceTimersByTimeAsync(20_000);
+      expect(FakeEventSource.instances).toHaveLength(1);
+    }
+  });
+
+  test('a network failure on the snapshot request is not fatal', async () => {
+    const t = start(vi.fn(async () => Promise.reject(Object.assign(new Error('offline'), { status: 0 }))));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(t.fatal).toEqual([]);
+    t.stream.close();
+  });
 });

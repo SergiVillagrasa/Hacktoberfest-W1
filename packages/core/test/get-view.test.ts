@@ -51,6 +51,20 @@ describe('getView visibility', () => {
     expect(JSON.stringify(await view(g, 'b'))).not.toContain('hint-c');
   });
 
+  test('a picture clue reports whether its hint is ready, still being drawn, or unavailable', async () => {
+    const g = activeGame();
+    g.clues.push(makeClue('va', 'tc', 'a', { kind: 'visual' }));
+    const status = async (change: (t: Game['targets'][number]) => Game['targets'][number]) => {
+      const game = structuredClone(g);
+      game.targets = game.targets.map((t) => (t.id === 'tc' ? change(t) : t));
+      return (await view(game, 'a')).myClues.find((c) => c.id === 'va')!.hintStatus;
+    };
+    expect(await status((t) => t)).toBe('ready');
+    expect(await status((t) => ({ ...t, assets: { ...t.assets, hintPath: null } }))).toBe('unavailable');
+    expect(await status((t) => ({ ...t, assets: { ...t.assets, hintPath: null, prep: 'pending' as const } }))).toBe('pending');
+    expect((await view(g, 'a')).myClues.find((c) => c.id === 'ca')!.hintStatus).toBeNull();
+  });
+
   test('an eliminated spectator sees everyone else\'s active clues with texts and hints', async () => {
     const g = activeGame();
     g.players[0]!.status = 'eliminated';

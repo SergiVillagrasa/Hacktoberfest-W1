@@ -16,6 +16,8 @@ export const ClueView = z.object({
   secondAudioUrl: url,
   judgeBusyAudioUrl: url,
   hintUrl: url,
+  /** For picture clues: whether the hint image is ready, still being drawn, or will never come. Null for spoken clues. */
+  hintStatus: z.enum(['ready', 'pending', 'unavailable']).nullable(),
   secondClueUsed: z.boolean(),
   issuedAt: iso,
 });

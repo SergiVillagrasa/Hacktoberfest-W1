@@ -3,7 +3,7 @@
 import { RoomView } from '@snaphunt/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createApi } from './api';
-import { getSession } from './session';
+import { clearSession, getSession } from './session';
 
 export interface EventSourceLike {
   readyState: number;
@@ -24,6 +24,12 @@ export interface RoomStreamOptions {
 const CLOSED = 2;
 const FATAL_CODES = new Set(['forbidden', 'not_found']);
 
+/** A rejected session or a missing room can never recover by retrying. */
+function fatalCodeOf(error: unknown): string | null {
+  const status = (error as { status?: number } | null)?.status;
+  return status === 401 || status === 403 ? 'forbidden' : status === 404 ? 'not_found' : null;
+}
+
 export function connectRoomStream({ url, fetchView, onView, onConnected, onFatal, EventSourceCtor = EventSource, maxBackoffMs = 8000 }: RoomStreamOptions) {
   let source: EventSourceLike | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -36,7 +42,22 @@ export function connectRoomStream({ url, fetchView, onView, onConnected, onFatal
     version = view.version;
     onView(view);
   };
-  const resync = () => void fetchView().then((view) => !stopped && deliver(view), () => {});
+  const stop = (code: string) => {
+    if (stopped) return;
+    stopped = true;
+    clearTimeout(timer);
+    source?.close();
+    onConnected(false);
+    onFatal?.(code);
+  };
+  const resync = () =>
+    void fetchView().then(
+      (view) => !stopped && deliver(view),
+      (error) => {
+        const code = fatalCodeOf(error);
+        if (code) stop(code);
+      },
+    );
 
   function open() {
     if (stopped) return;
@@ -56,9 +77,7 @@ export function connectRoomStream({ url, fetchView, onView, onConnected, onFatal
       onConnected(false);
       const body = typeof event?.data === 'string' ? (safeJson(event.data) as { code?: string } | null) : null;
       if (body?.code && FATAL_CODES.has(body.code)) {
-        stopped = true;
-        source?.close();
-        onFatal?.(body.code);
+        stop(body.code);
       } else if (source?.readyState === CLOSED) {
         source.close();
         timer = setTimeout(() => (resync(), open()), Math.min(500 * 2 ** attempt++, maxBackoffMs));
@@ -118,7 +137,10 @@ export function useRoomView(code: string): RoomViewState {
         setClockOffsetMs(Date.parse(next.serverNow) - Date.now());
       },
       onConnected: setConnected,
-      onFatal: setError,
+      onFatal: (reason) => {
+        clearSession(code);
+        setError(reason);
+      },
     });
     streamRef.current = stream;
     const wake = () => document.visibilityState === 'visible' && stream.resync();
