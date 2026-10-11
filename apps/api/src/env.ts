@@ -1,10 +1,24 @@
 import { z } from 'zod';
 
-const EnvSchema = z.object({
-  DATABASE_URL: z.string().min(1),
-  WEB_ORIGIN: z.string().min(1).default('http://localhost:3000'),
-  PORT: z.coerce.number().int().positive().default(8787),
-});
+const required = z.string().min(1);
+
+const EnvSchema = z
+  .object({
+    DATABASE_URL: required,
+    SUPABASE_URL: required,
+    SUPABASE_SERVICE_ROLE_KEY: required,
+    ELEVENLABS_API_KEY: required,
+    FAL_KEY: required,
+    VISION_MODEL: required.default('nebius/Qwen/Qwen3.8-27B'),
+    NEBIUS_API_KEY: z.string().optional(),
+    GOOGLE_AI_API_KEY: z.string().optional(),
+    WEB_ORIGIN: required.default('http://localhost:3000'),
+    PORT: z.coerce.number().int().positive().default(8787),
+  })
+  .superRefine((env, ctx) => {
+    const provider = env.VISION_MODEL.startsWith('google/') ? 'GOOGLE_AI_API_KEY' : 'NEBIUS_API_KEY';
+    if (!env[provider]) ctx.addIssue({ code: 'custom', path: [provider], message: 'required' });
+  });
 
 export type Env = z.infer<typeof EnvSchema>;
 

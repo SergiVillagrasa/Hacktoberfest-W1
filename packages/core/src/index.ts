@@ -11,3 +11,4 @@ export * from './domain/game';
 export * from './ports';
 export * from './usecases/rooms';
 export * from './testing/memory-game-repository';
+export * from './usecases/targets';
