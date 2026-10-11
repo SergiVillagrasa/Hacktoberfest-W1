@@ -8,15 +8,21 @@
   ],
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "db:generate": "drizzle-kit generate --config packages/infra/drizzle.config.ts",
+    "db:migrate": "bun --env-file=.env x drizzle-kit migrate --config packages/infra/drizzle.config.ts"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@types/bun": "1.4.2",
+    "drizzle-kit": "0.31.11",
     "typescript": "5.9.3",
     "vitest": "5.0.3"
   },
   "dependencies": {
     "@mastra/core": "1.74.0",
+    "drizzle-orm": "0.45.3",
+    "postgres": "3.4.9",
     "zod": "4.6.5"
   }
 }
