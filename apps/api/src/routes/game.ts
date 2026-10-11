@@ -1,9 +1,10 @@
 import { RoomCodeParam } from '@snaphunt/contracts';
 import { getView, startRoom, tick, type ViewDeps, type StartDeps } from '@snaphunt/core';
 import { Router } from 'express';
+import { streamRoom, type SseOptions } from '../sse';
 import { requirePlayer } from '../auth';
 
-export function gameRoutes(deps: StartDeps & ViewDeps): Router {
+export function gameRoutes(deps: StartDeps & ViewDeps, sse: Partial<SseOptions> = {}): Router {
   const router = Router();
   const code = (raw: unknown) => RoomCodeParam.parse(String(raw).toUpperCase());
 
@@ -16,6 +17,10 @@ export function gameRoutes(deps: StartDeps & ViewDeps): Router {
     const game = await tick(deps, code(req.params.code));
     res.json(await getView(deps, game, req.player!.playerId, deps.now()));
   });
+
+  router.get('/rooms/:code/events', requirePlayer(deps.games, { allowQueryToken: true }), (req, res) =>
+    streamRoom(deps, req, res, code(req.params.code), req.player!.playerId, sse),
+  );
 
   return router;
 }
