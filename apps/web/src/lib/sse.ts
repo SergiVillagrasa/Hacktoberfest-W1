@@ -1,7 +1,7 @@
 'use client';
 
 import { RoomView } from '@snaphunt/contracts';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createApi } from './api';
 import { getSession } from './session';
 
@@ -86,10 +86,22 @@ function safeJson(raw: unknown): unknown {
   }
 }
 
-export function useRoomView(code: string): { view: RoomView | null; connected: boolean; error: string | null } {
+export interface RoomViewState {
+  view: RoomView | null;
+  connected: boolean;
+  error: string | null;
+  /** serverNow minus the phone's clock when the latest view arrived; add it to Date.now() to read server time. */
+  clockOffsetMs: number;
+  refresh: () => void;
+}
+
+export function useRoomView(code: string): RoomViewState {
   const [view, setView] = useState<RoomView | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clockOffsetMs, setClockOffsetMs] = useState(0);
+  const streamRef = useRef<{ resync: () => void } | null>(null);
+  const refresh = useCallback(() => streamRef.current?.resync(), []);
 
   useEffect(() => {
     const session = getSession(code);
@@ -101,19 +113,24 @@ export function useRoomView(code: string): { view: RoomView | null; connected: b
     const stream = connectRoomStream({
       url: api.eventsUrl(code, session.token),
       fetchView: () => api.getRoom(code, session.token),
-      onView: setView,
+      onView: (next) => {
+        setView(next);
+        setClockOffsetMs(Date.parse(next.serverNow) - Date.now());
+      },
       onConnected: setConnected,
       onFatal: setError,
     });
+    streamRef.current = stream;
     const wake = () => document.visibilityState === 'visible' && stream.resync();
     document.addEventListener('visibilitychange', wake);
     window.addEventListener('online', stream.resync);
     return () => {
       document.removeEventListener('visibilitychange', wake);
       window.removeEventListener('online', stream.resync);
+      streamRef.current = null;
       stream.close();
     };
   }, [code]);
 
-  return { view, connected, error };
+  return { view, connected, error, clockOffsetMs, refresh };
 }

@@ -99,7 +99,7 @@ export async function getView(deps: ViewDeps, game: Game, playerId: string, now:
     me: { playerId, isCreator: me.isCreator, status: me.status, failedAttempts: me.failedAttempts, attemptsLeft: Math.max(0, MAX_FAILED_ATTEMPTS - me.failedAttempts) },
     players: game.players.map((p) => {
       const r = ranking.find((x) => x.playerId === p.id)!;
-      return { id: p.id, nickname: p.nickname, isCreator: p.isCreator, status: p.status, ready: game.targets.some((t) => t.ownerId === p.id && t.validation === 'accepted'), score: r.score, finds: r.finds };
+      return { id: p.id, nickname: p.nickname, isCreator: p.isCreator, status: p.status, ready: game.targets.some((t) => t.ownerId === p.id && t.validation === 'accepted' && t.assets.clues !== null), score: r.score, finds: r.finds };
     }),
     myClues,
     spectatorClues,

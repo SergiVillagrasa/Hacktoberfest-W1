@@ -74,6 +74,15 @@ describe('getView visibility', () => {
     expect(JSON.stringify(countdown)).not.toContain('first-b');
   });
 
+  test('a player is ready only once the photo is accepted and the clue texts are written', async () => {
+    const lobby = activeGame({ status: 'lobby' });
+    lobby.clues = [];
+    lobby.targets[0] = { ...lobby.targets[0]!, assets: { ...lobby.targets[0]!.assets, clues: null } };
+    lobby.targets[1] = { ...lobby.targets[1]!, validation: 'pending' };
+    const v = await view(lobby, 'a');
+    expect(v.players.map((p) => p.ready)).toEqual([false, false, true]);
+  });
+
   test('finished games reveal ranking and recap with originals', async () => {
     const g = activeGame({ status: 'finished' });
     g.targets[1] = { ...g.targets[1]!, foundBy: 'a', foundAt: T0, points: 900 };

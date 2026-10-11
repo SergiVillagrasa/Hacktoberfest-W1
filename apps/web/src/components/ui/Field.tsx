@@ -13,7 +13,7 @@ export function Field({ label, hint, className = '', ...input }: FieldProps) {
       <label htmlFor={id} className="text-base font-bold text-ink">
         {label}
       </label>
-      <input id={id} className={`field ${className}`} aria-describedby={hint ? hintId : undefined} {...input} />
+      <input id={id} className={`sh-field ${className}`} aria-describedby={hint ? hintId : undefined} {...input} />
       {hint ? (
         <p id={hintId} className="text-sm text-ink-soft">
           {hint}
