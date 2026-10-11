@@ -28,6 +28,7 @@
     "@fal-ai/client": "1.10.1",
     "@mastra/core": "1.74.0",
     "@supabase/supabase-js": "2.117.2",
+    "@vercel/functions": "3.9.11",
     "cors": "2.8.6",
     "drizzle-orm": "0.45.3",
     "express": "5.2.1",
