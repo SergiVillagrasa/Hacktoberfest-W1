@@ -6,7 +6,7 @@ Items marked **(builder call)** were decided by the designer, not the user, and 
 
 ## 1. Intent
 
-SnapHunt is a phone party game for 2–6 friends, played mainly outdoors. Each player secretly photographs a real object nearby; everyone then hunts someone else's object using clues from an AI game-show host, and photographs it to prove the find. The phone is a clue receiver and a camera; the play happens in the world. It is the Hacktoberfest Week 1 "Touch Grass" entry, with Gemma 4 31B IT (open-weight) as the core judge and clue writer.
+SnapHunt is a phone party game for 2–6 friends, played mainly outdoors. Each player secretly photographs a real object nearby; everyone then hunts someone else's object using clues from an AI game-show host, and photographs it to prove the find. The phone is a clue receiver and a camera; the play happens in the world. It is the Hacktoberfest Week 1 "Touch Grass" entry, with open-weight vision AI (Qwen3.8-27B primary, Gemma 4 31B IT fallback) as the core judge and clue writer.
 
 Success tonight: a real outdoor round with friends that runs start to finish without anyone touching a laptop, plus enough evidence (recap gallery, screenshots, stories) for a strong DEV post.
 
@@ -38,7 +38,7 @@ Success tonight: a real outdoor round with friends that runs start to finish wit
 
 ### 3.1 Lobby and target capture
 - Every player photographs one secret object with the phone camera.
-- The backend validates each target with Gemma: one clear primary object, safe and appropriate, not a duplicate of an already-accepted target in the room. Rejected photos come back with a friendly reason and a retake.
+- The backend validates each target with the vision model: one clear primary object, safe and appropriate, not a duplicate of an already-accepted target in the room. Rejected photos come back with a friendly reason and a retake.
 - On acceptance, the backend starts background preparation for that target (see 5.2) while the lobby continues.
 - The lobby shows who has joined and who is ready (target accepted). Nobody sees anyone else's photo.
 
@@ -52,10 +52,10 @@ Success tonight: a real outdoor round with friends that runs start to finish wit
 - A hunter can replay the clue freely and can ask once per voice clue they hold for a second, more specific clue. Using it lowers the points for that find (see 4). Visual clues have no second clue **(builder call)**.
 
 ### 3.4 Submitting a find
-- The hunter photographs what they think is the target and submits. The mascot shows a "thinking" state while Gemma compares it to the private reference.
+- The hunter photographs what they think is the target and submits. The mascot shows a "thinking" state while the vision model compares it to the private reference.
 - Match rule: the exact same physical object, typically photographed from a different position or angle; same-category lookalikes fail. Gemma returns structured evidence; the backend applies the threshold and owns the result.
 - Each player has 5 failed attempts for the whole game. No cooldown. A player who uses all 5 becomes a spectator ("out of attempts").
-- If Gemma cannot return a verdict within about 20 seconds (including retries), the attempt does not count against the 5, the photo is not judged, and the host instead reads an extra voice clue for that target (pre-generated, see 5.2) with no point cost **(cost is a builder call)**. The player retakes and submits again.
+- If the vision model cannot return a verdict within about 20 seconds (including retries), the attempt does not count against the 5, the photo is not judged, and the host instead reads an extra voice clue for that target (pre-generated, see 5.2) with no point cost **(cost is a builder call)**. The player retakes and submits again.
 - A verified find marks the target found exactly once, scores it, announces it to everyone (mascot + voice), and triggers a visual race if one is legal.
 
 ### 3.5 Visual-clue races
@@ -102,13 +102,13 @@ points    = round(base × (second clue used ? 0.75 : 1))
 ## 5. AI, Voice, and Images
 
 ### 5.1 Roles
-- **Gemma 4 31B IT** (via Google AI Studio, orchestrated with Mastra): target validation, clue writing (first and second clue, plus a short visual-race voice clue), and exact-object verification with structured evidence. Every call retries with backoff and is idempotent.
+- **Qwen3.8-27B** (primary, via Nebius, orchestrated with Mastra; Gemma 4 31B IT is the configurable fallback): target validation, clue writing (first and second clue, plus a short visual-race voice clue), and exact-object verification with structured evidence. Every call retries with backoff and is idempotent.
 - **ElevenLabs**: one game-show host voice for clues and announcements (finds, eliminations, solo-hunt switch, winner).
 - **Fal** (`fal-ai/nano-banana-2/edit` to start): turns a target's reference photo into a stylized illustration of the object that keeps its silhouette and distinctive features but removes surroundings, text, and location cues.
 
 ### 5.2 Preparation ahead of play (builder call)
 When a target is accepted in the lobby, the backend prepares in the background:
-1. clue texts (first, second, visual-race, and the extra "judge is busy" clue) with Gemma;
+1. clue texts (first, second, visual-race, and the extra "judge is busy" clue) with the vision model;
 2. clue audio with ElevenLabs;
 3. the Fal visual hint, checked against the visual-clue acceptance contract in the brief.
 
@@ -117,12 +117,12 @@ This hides most AI latency before the game starts. If preparation is not finishe
 ### 5.3 Provider fallbacks
 - ElevenLabs fails: the clue is shown as text in the mascot's speech bubble.
 - Fal fails or the hint fails the acceptance contract: the visual challenger keeps the short voice clue for that target.
-- Gemma fails during verification: see 3.4.
+- The vision model fails during verification: see 3.4.
 
 ### 5.4 Verification spike and backup provider
-Gemma multimodal comparison is untested. The first implementation step is a throwaway spike: send pairs of same-object and lookalike photos through Gemma directly and via Mastra, measure accuracy and latency, and tune the prompt and threshold before building on it.
+The spike (PR #3) measured both models through Mastra on one object (9 calls each, both 9/9 correct). Gemma 4 31B took 33–192 s per call with frequent HTTP 503/500; Qwen3.8-27B took 2.3–8.7 s with no errors. Qwen is therefore primary.
 
-The vision model sits behind a core port, so the provider can be swapped by configuration (`VISION_MODEL`). Primary: `google/gemma-4-31b-it` (Google AI Studio, `GOOGLE_AI_API_KEY`). Fallback, used only if Gemma fails the spike or proves unreliable: `nebius/Qwen/Qwen3.8-27B` (Nebius Token Factory, `NEBIUS_API_KEY`; open-weight, Apache 2.0, image input). Switching off Gemma weakens the "Best Use of Gemma" story, so the fallback is a last resort.
+The vision model sits behind a core port, so the provider can be swapped by configuration (`VISION_MODEL`). Primary: `nebius/Qwen/Qwen3.8-27B` (Nebius Token Factory, `NEBIUS_API_KEY`; open-weight, Apache 2.0, image input). Fallback: `google/gemma-4-31b-it` (Google AI Studio, `GOOGLE_AI_API_KEY`), accurate but too slow for the 20 s judge budget in the spike.
 
 ## 6. Screens and Feel
 
