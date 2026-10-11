@@ -23,6 +23,7 @@ export async function startRoom(deps: StartDeps, input: { code: string; actorId:
     input.code,
     (game) => {
       if (game.players.find((p) => p.id === input.actorId)?.isCreator !== true) throw new GameError('forbidden', 'Only the creator can start the game');
+      if (game.targets.some((t) => t.validation === 'accepted' && !t.assets.clues)) throw new GameError('not_ready', 'Still writing the clues, one moment');
       return startGame(game, deps.now(), deps.rng, deps.newId);
     },
     async (_game, transition) => (started = await deps.games.save(transition.game, transition.events)),

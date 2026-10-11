@@ -14,7 +14,7 @@ async function setup(opts: { acceptTargets?: boolean; players?: number } = {}) {
   const sessions = [ann];
   for (let i = 1; i < (opts.players ?? 2); i++) sessions.push(await joinRoom(deps, { code: ann.roomCode, nickname: `P${i}` }));
   const game = (await games.loadByCode(ann.roomCode))!;
-  const assets = { prep: 'ready' as const, clues: null, audio: { first: null, second: null, visual: null, judgeBusy: null }, hintPath: null };
+  const assets = { prep: 'ready' as const, clues: { first: 'a', second: 'b', visual: 'c', judgeBusy: 'd' }, audio: { first: null, second: null, visual: null, judgeBusy: null }, hintPath: null };
   const targets: Target[] = sessions.map((s, i) => ({ id: `t-${i}`, ownerId: s.playerId, imagePath: `p${i}.jpg`, validation: opts.acceptTargets === false ? 'pending' : 'accepted', rejectReason: null, foundBy: null, foundAt: null, points: null, assets }));
   await games.save({ ...game, targets }, []);
   return { deps, games, code: ann.roomCode, sessions };
@@ -39,6 +39,18 @@ describe('startRoom', () => {
     expect(await code(startRoom(pending.deps, { code: pending.code, actorId: pending.sessions[0]!.playerId }))).toBe('not_ready');
     const solo = await setup({ players: 1 });
     expect(await code(startRoom(solo.deps, { code: solo.code, actorId: solo.sessions[0]!.playerId }))).toBe('invalid_state');
+  });
+});
+
+describe('startRoom clue readiness', () => {
+  test('waits until every accepted target has its clue texts, so later failures cannot revoke a target', async () => {
+    const { deps, games, code: c, sessions } = await setup();
+    const game = (await games.loadByCode(c))!;
+    await games.save({ ...game, targets: game.targets.map((t, i) => (i === 0 ? { ...t, assets: { ...t.assets, prep: 'pending' as const, clues: null } } : t)) }, []);
+    expect(await code(startRoom(deps, { code: c, actorId: sessions[0]!.playerId }))).toBe('not_ready');
+    const again = (await games.loadByCode(c))!;
+    await games.save({ ...again, targets: again.targets.map((t) => ({ ...t, assets: { ...t.assets, clues: { first: 'a', second: 'b', visual: 'c', judgeBusy: 'd' } } })) }, []);
+    expect((await startRoom(deps, { code: c, actorId: sessions[0]!.playerId })).status).toBe('countdown');
   });
 });
 
