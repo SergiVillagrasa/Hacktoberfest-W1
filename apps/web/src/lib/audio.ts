@@ -1,3 +1,5 @@
+import { withBase } from './base-path';
+
 export interface AudioLike {
   src: string;
   currentTime: number;
@@ -43,7 +45,7 @@ export async function playClue(url: string, create: () => AudioLike = make, onEn
 
 /** Plays one of the static host announcements from `public/voice`. */
 export function playHostClip(name: string, create: () => AudioLike = make, onEnd?: () => void): Promise<boolean> {
-  return playClue(`/voice/${name}.mp3`, create, onEnd);
+  return playClue(withBase(`/voice/${name}.mp3`), create, onEnd);
 }
 
 export function stopClue(): void {

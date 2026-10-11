@@ -79,4 +79,15 @@ describe('rooms api', () => {
     const res = await request(app).delete(`/rooms/${a.roomCode}/players/x`).set('authorization', `Bearer ${b.token}`);
     expect(res.status).toBe(403);
   });
+
+  test('CORS allows each configured web origin and no other', async () => {
+    const { deps } = makeDeps({ webOrigin: 'https://example.tech, https://snaphunt-web.vercel.app' });
+    const multi = createApp(deps);
+    for (const origin of ['https://example.tech', 'https://snaphunt-web.vercel.app']) {
+      const res = await request(multi).options('/rooms').set('origin', origin).set('access-control-request-method', 'POST');
+      expect(res.headers['access-control-allow-origin']).toBe(origin);
+    }
+    const other = await request(multi).options('/rooms').set('origin', 'https://evil.example').set('access-control-request-method', 'POST');
+    expect(other.headers['access-control-allow-origin']).toBeUndefined();
+  });
 });

@@ -21,6 +21,7 @@ describe('lobby rules', () => {
 
   test('the invite link carries the room code', () => {
     expect(shareUrl('https://snaphunt.app', 'ABCDE')).toBe('https://snaphunt.app/join?code=ABCDE');
+    expect(shareUrl('https://example.tech', 'ABCDE', '/projects/snaphunt')).toBe('https://example.tech/projects/snaphunt/join?code=ABCDE');
   });
 });
 

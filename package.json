@@ -11,10 +11,11 @@
     "typecheck": "tsc -b && tsc --noEmit -p apps/web",
     "db:generate": "cd packages/infra && drizzle-kit generate",
     "db:migrate": "bun --env-file=.env packages/infra/scripts/migrate.ts",
-    "deploy:api": "bash scripts/deploy-api.sh",
+    "deploy:api": "bash scripts/deploy.sh api",
     "dev:web": "bun run --filter @snaphunt/web dev",
     "build:web": "bun run --filter @snaphunt/web build",
-    "dev:api:fake": "bun apps/api/src/dev-server.ts"
+    "dev:api:fake": "bun apps/api/src/dev-server.ts",
+    "deploy:web": "bash scripts/deploy.sh web"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
