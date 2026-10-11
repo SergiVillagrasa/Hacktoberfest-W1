@@ -172,7 +172,7 @@ h1, h2, h3, .font-display {
 }
 
 /* Bordered surface for lists, clues and results. */
-.card {
+.sh-card {
   border: 2px solid var(--line);
   border-bottom-width: 4px;
   border-bottom-color: var(--line-deep);
@@ -180,7 +180,12 @@ h1, h2, h3, .font-display {
   background: white;
 }
 
-.card-selected {
+.sh-card-info {
+  border-color: var(--sky);
+  border-bottom-color: var(--sky-edge);
+}
+
+.sh-card-selected {
   border-color: var(--leaf);
   border-bottom-color: var(--leaf-edge);
   background: var(--leaf-soft);
@@ -189,5 +194,156 @@ h1, h2, h3, .font-display {
 @media (prefers-reduced-motion: reduce) {
   .chunky {
     transition: none;
+  }
+}
+
+/* Form controls */
+.sh-field {
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0 1rem;
+  border: 2px solid var(--line);
+  border-radius: 0.875rem;
+  background: white;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.sh-field::placeholder {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.sh-field:focus-visible {
+  outline: 3px solid var(--sky);
+  outline-offset: 2px;
+  border-color: var(--sky);
+}
+
+.sh-field[aria-invalid="true"] {
+  border-color: var(--bow);
+}
+
+.code-input {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.sh-chip {
+  min-height: 3rem;
+  padding: 0 0.5rem;
+  border: 2px solid var(--line);
+  border-bottom: 4px solid var(--line-deep);
+  border-radius: 0.875rem;
+  background: white;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sh-chip[aria-checked="true"] {
+  border-color: var(--leaf);
+  border-bottom-color: var(--leaf-edge);
+  background: var(--leaf-soft);
+  color: var(--leaf-edge);
+}
+
+.back-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding-right: 0.75rem;
+  color: var(--sky);
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.back-link::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.5rem;
+  border-left: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  transform: rotate(45deg);
+}
+
+/* Camera capture: the file input stays focusable but visually hidden inside its button. */
+.capture {
+  position: relative;
+}
+
+.capture-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.capture:focus-within {
+  outline: 3px solid var(--sky);
+  outline-offset: 3px;
+}
+
+.chunky-sm {
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  border-radius: 0.75rem;
+}
+
+.sh-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0 0.625rem;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.sh-badge-ready {
+  background: var(--leaf-soft);
+  color: var(--leaf-edge);
+}
+
+.sh-badge-host {
+  background: var(--sun);
+  color: var(--ink);
+}
+
+.sh-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 3px solid var(--line-deep);
+  border-top-color: var(--leaf);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sh-spinner {
+    animation: none;
+    border-top-color: var(--line-deep);
   }
 }

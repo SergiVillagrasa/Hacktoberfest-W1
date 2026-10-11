@@ -53,3 +53,17 @@ describe('audio', () => {
     expect(log.at(-1)).toBe('pause');
   });
 });
+
+describe('audio end handling', () => {
+  test('playClue calls onEnd when the clip finishes and playHostClip points at the static clips', async () => {
+    const { audio, log } = fakeAudio();
+    let ended = 0;
+    expect(await playClue('https://cdn/x.mp3', () => audio, () => void ended++)).toBe(true);
+    audio.onended?.(new Event('ended'));
+    expect(ended).toBe(1);
+    const { playHostClip } = await import('../src/lib/audio');
+    expect(await playHostClip('find', () => audio)).toBe(true);
+    expect(log.at(-1)).toBe('play:/voice/find.mp3');
+    expect(audio.onended).toBeNull();
+  });
+});

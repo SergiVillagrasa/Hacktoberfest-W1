@@ -36,9 +36,30 @@ typography:
     fontSize: "1rem"
     fontWeight: 600
     lineHeight: 1.5
+  field:
+    fontFamily: "Nunito, ui-rounded, system-ui, sans-serif"
+    fontSize: "1.125rem"
+    fontWeight: 700
+    lineHeight: 1.5
+  code:
+    fontFamily: "Rubik, ui-rounded, system-ui, sans-serif"
+    fontSize: "1.75rem"
+    fontWeight: 800
+    letterSpacing: "0.3em"
+  button-small:
+    fontFamily: "Rubik, ui-rounded, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 700
+    letterSpacing: "0.04em"
+  badge:
+    fontFamily: "Rubik, ui-rounded, system-ui, sans-serif"
+    fontSize: "0.8125rem"
+    fontWeight: 700
 rounded:
   control: "0.875rem"
+  small: "0.75rem"
   card: "1rem"
+  pill: "999px"
 spacing:
   gap: "0.75rem"
   screen: "1.25rem"
@@ -172,6 +193,18 @@ Rounded and confident but never pill-shaped or bubbly: controls 0.875rem, cards 
 ### Inputs / Fields
 - **Style:** white fill, 2px Line border, 0.875rem radius, Ink text and Ink Soft placeholder.
 - **Focus:** Sky ring and Sky border. Error uses Bow.
+
+### Chips
+Time-limit and option choices. A 3rem tall bordered tile (2px Line, 4px Line Deep bottom) with an Ink label in Rubik; the selected chip turns Leaf Soft with a Leaf border, Leaf Edge bottom and Leaf Edge text. Chips form an accessible radio group.
+
+### Small buttons and badges
+Secondary actions inside a card (Copy, Share, Remove, Replay) use the small button: 2.75rem tall, 0.875rem Rubik label, 0.75rem radius. Badges are 1.75rem pills (Rubik 0.8125rem): neutral Line for status, Leaf Soft with Leaf Edge text for "Ready", Sun with Ink text for "Host".
+
+### Game status
+The sticky hunt bar holds three things: the clock (Rubik 800, 1.875rem, tabular numerals, Bow red under one minute), five attempt dots (Leaf when left, Line Deep when used) and the player's points. Spoken clues, the second clue and the judge's bonus hint each sit in a card or tinted tile with a replay button; the picture clue card has a Sky border.
+
+### Result tiles
+Rankings and scoreboards are bordered rows with a tabular rank, the nickname, an optional badge and the score; the viewer's own row uses Leaf Soft. Recap cards pair the secret object with the photo that found it (Leaf border) and the picture clue.
 
 ### Mascot
 The pug host is a flat 2D illustration with its background cut out, standing on the white page with a neutral translucent ground shadow. It has eight poses (`idle`, `talking`, `thinking`, `celebrating`, `sad`, `shocked`, `countdown`, `trophy`), no blush, no whiskers, and a plain red bow tie. Each pose has its own looping motion (bob, wiggle, sway, bounce, droop, shake, pulse) and a short pop-in when the pose changes; all of it stops under `prefers-reduced-motion`.

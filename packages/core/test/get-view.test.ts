@@ -51,6 +51,20 @@ describe('getView visibility', () => {
     expect(JSON.stringify(await view(g, 'b'))).not.toContain('hint-c');
   });
 
+  test('a picture clue reports whether its hint is ready, still being drawn, or unavailable', async () => {
+    const g = activeGame();
+    g.clues.push(makeClue('va', 'tc', 'a', { kind: 'visual' }));
+    const status = async (change: (t: Game['targets'][number]) => Game['targets'][number]) => {
+      const game = structuredClone(g);
+      game.targets = game.targets.map((t) => (t.id === 'tc' ? change(t) : t));
+      return (await view(game, 'a')).myClues.find((c) => c.id === 'va')!.hintStatus;
+    };
+    expect(await status((t) => t)).toBe('ready');
+    expect(await status((t) => ({ ...t, assets: { ...t.assets, hintPath: null } }))).toBe('unavailable');
+    expect(await status((t) => ({ ...t, assets: { ...t.assets, hintPath: null, prep: 'pending' as const } }))).toBe('pending');
+    expect((await view(g, 'a')).myClues.find((c) => c.id === 'ca')!.hintStatus).toBeNull();
+  });
+
   test('an eliminated spectator sees everyone else\'s active clues with texts and hints', async () => {
     const g = activeGame();
     g.players[0]!.status = 'eliminated';
@@ -72,6 +86,15 @@ describe('getView visibility', () => {
     const countdown = await view(activeGame({ status: 'countdown' }), 'a');
     expect(countdown.myClues[0]).toMatchObject({ text: null, audioUrl: null });
     expect(JSON.stringify(countdown)).not.toContain('first-b');
+  });
+
+  test('a player is ready only once the photo is accepted and the clue texts are written', async () => {
+    const lobby = activeGame({ status: 'lobby' });
+    lobby.clues = [];
+    lobby.targets[0] = { ...lobby.targets[0]!, assets: { ...lobby.targets[0]!.assets, clues: null } };
+    lobby.targets[1] = { ...lobby.targets[1]!, validation: 'pending' };
+    const v = await view(lobby, 'a');
+    expect(v.players.map((p) => p.ready)).toEqual([false, false, true]);
   });
 
   test('finished games reveal ranking and recap with originals', async () => {

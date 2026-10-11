@@ -20,7 +20,7 @@ export default function MascotDevPage() {
       <h1 className="mb-6 text-3xl text-leaf">Mascot states</h1>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {MASCOT_STATES.map((state) => (
-          <section key={state} className="card flex flex-col items-center gap-3 p-4">
+          <section key={state} className="sh-card flex flex-col items-center gap-3 p-4">
             <h2 className="text-lg text-ink">{state}</h2>
             <Mascot state={state} line={LINES[state]} size="md" />
           </section>
