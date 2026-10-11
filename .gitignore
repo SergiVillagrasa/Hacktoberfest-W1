@@ -24,3 +24,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Local spike inputs (private photos)
+spikes/photos/
