@@ -5,7 +5,12 @@ import { CLUES_PROMPT, COMPARE_PROMPT, VALIDATE_PROMPT } from './prompts';
 import { withRetry } from './retry';
 
 const ValidationSchema = z.object({ accepted: z.boolean(), reason: z.string().nullable(), label: z.string() });
-const CluesSchema = z.object({ first: z.string(), second: z.string(), visual: z.string(), judgeBusy: z.string() });
+const clue = (maxWords: number) =>
+  z
+    .string()
+    .trim()
+    .refine((text) => text.length > 0 && text.split(/\s+/).length <= maxWords, `clue must be 1-${maxWords} words`);
+export const CluesSchema = z.object({ first: clue(25), second: clue(25), visual: clue(12), judgeBusy: clue(25) });
 const EvidenceSchema = z.object({
   sameObject: z.boolean(),
   confidence: z.number().min(0).max(1),
@@ -32,7 +37,7 @@ export function createMastraVision({ modelId, apiKey, compareDeadlineMs = JUDGE_
           { structuredOutput: { schema, jsonPromptInjection: 'auto' }, abortSignal: attemptSignal, modelSettings: { maxRetries: 0 } },
         );
         if (!res.object) throw new Error('Vision model returned no structured output');
-        return res.object as z.infer<S>;
+        return schema.parse(res.object);
       },
       { deadlineMs, signal },
     );

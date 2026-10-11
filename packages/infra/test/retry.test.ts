@@ -67,4 +67,17 @@ describe('withRetry', () => {
     const run = withRetry((signal) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')))), { deadlineMs: 30 });
     await expect(run).rejects.toBeInstanceOf(DeadlineExceeded);
   });
+
+  test('does not call fn when the parent signal is already aborted', async () => {
+    const parent = new AbortController();
+    parent.abort(new Error('cancelled'));
+    let calls = 0;
+    await expect(
+      withRetry(async () => {
+        calls++;
+        return 'ok';
+      }, { deadlineMs: 1000, signal: parent.signal }),
+    ).rejects.toThrow('cancelled');
+    expect(calls).toBe(0);
+  });
 });

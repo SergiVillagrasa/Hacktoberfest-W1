@@ -25,6 +25,7 @@ export async function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>, opts
   const { deadlineMs, baseDelayMs = 500, isRetryable = isRetryableError } = opts;
   const sleep = opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   const now = opts.now ?? Date.now;
+  if (opts.signal?.aborted) throw opts.signal.reason;
   const start = now();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new DeadlineExceeded()), deadlineMs);
