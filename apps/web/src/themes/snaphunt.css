@@ -19,8 +19,8 @@
   --fawn-edge: oklch(0.68 0.12 68);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  --font-display: var(--font-rubik), ui-rounded, system-ui, sans-serif;
-  --font-body: var(--font-nunito), ui-rounded, system-ui, sans-serif;
+  --font-display: 'Rubik Variable', Rubik, ui-rounded, system-ui, sans-serif;
+  --font-body: 'Nunito Variable', Nunito, ui-rounded, system-ui, sans-serif;
 
   /* HeroUI semantic mapping */
   --background: white;

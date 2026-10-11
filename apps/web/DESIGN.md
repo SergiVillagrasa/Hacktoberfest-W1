@@ -128,7 +128,7 @@ A white ground with a single committed green, kept confident and accessible, and
 **Display Font:** Rubik (with ui-rounded, system-ui)
 **Body Font:** Nunito (with ui-rounded, system-ui)
 
-**Character:** Rubik has slightly rounded corners and confident heavy weights: friendly and clear but clearly grown-up. Nunito stays warm and very readable for clue text. Both are loaded with `next/font` and kept at 600 or heavier so text survives sunlight.
+**Character:** Rubik has slightly rounded corners and confident heavy weights: friendly and clear but clearly grown-up. Nunito stays warm and very readable for clue text. Both are self-hosted variable fonts (Fontsource) so builds never depend on Google Fonts, and are kept at 600 or heavier so text survives sunlight.
 
 ### Hierarchy
 - **Display** (800, 2.25rem, 1.0, -0.025em): the SnapHunt wordmark and screen titles, balanced wrapping.
