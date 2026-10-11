@@ -41,7 +41,7 @@ Outdoors, in daylight, standing or walking, often holding a phone in one hand. C
 - Name: SnapHunt.
 - The host mascot is a pug, a flat 2D illustration with a plain red bow tie, the canonical image is `packages/infra/assets/pug-mascot.webp`. No blush cheeks and no whiskers.
 - The host voice is a friendly game-show host (ElevenLabs, English).
-- Friendly and kind, inspired by Kahoot and Duolingo. This was stated by the product owner and is recorded as a binding reference; its visual interpretation is not decided here.
+- Friendly and kind, with the polish of Duolingo, for players of all ages. It must not look like a kids' app. This was stated by the product owner and is recorded as a binding reference; Kahoot's energy was an earlier reference and is secondary.
 
 ## Evidence on Hand
 
