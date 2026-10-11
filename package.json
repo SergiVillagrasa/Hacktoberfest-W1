@@ -13,7 +13,8 @@
     "db:migrate": "bun --env-file=.env packages/infra/scripts/migrate.ts",
     "deploy:api": "bash scripts/deploy-api.sh",
     "dev:web": "bun run --filter @snaphunt/web dev",
-    "build:web": "bun run --filter @snaphunt/web build"
+    "build:web": "bun run --filter @snaphunt/web build",
+    "dev:api:fake": "bun apps/api/src/dev-server.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
