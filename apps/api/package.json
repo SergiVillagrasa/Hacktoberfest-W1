@@ -12,5 +12,9 @@
     "@snaphunt/contracts": "workspace:*",
     "@snaphunt/core": "workspace:*",
     "@snaphunt/infra": "workspace:*"
+  },
+  "scripts": {
+    "build": "mkdir -p public && printf 'User-agent: *\\nDisallow: /\\n' > public/robots.txt && bun build src/vercel-entry.ts --target=node --format=esm --outfile=dist/server.js && cp ../../packages/infra/assets/pug-mascot.webp dist/pug-mascot.webp",
+    "dev": "bun --env-file=../../.env src/server.ts"
   }
 }
