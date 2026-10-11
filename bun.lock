@@ -25,6 +25,9 @@
     "packages/contracts": {
       "name": "@snaphunt/contracts",
       "version": "0.0.0",
+      "dependencies": {
+        "zod": "4.6.5",
+      },
     },
     "packages/core": {
       "name": "@snaphunt/core",
