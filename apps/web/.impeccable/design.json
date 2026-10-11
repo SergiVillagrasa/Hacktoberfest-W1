@@ -1,67 +1,97 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-11T13:39:01.034356+00:00",
+  "generatedAt": "2026-10-11T14:13:27.216474+00:00",
   "title": "Design System: SnapHunt",
   "extensions": {
     "colorMeta": {
-      "grape": {
+      "leaf": {
         "role": "primary",
-        "displayName": "Grape",
-        "canonical": "oklch(0.5 0.23 295)",
+        "displayName": "Leaf",
+        "canonical": "oklch(0.54 0.17 142)",
         "tonalRamp": [
-          "oklch(0.15 0.23 295)",
-          "oklch(0.27 0.23 295)",
-          "oklch(0.39 0.23 295)",
-          "oklch(0.51 0.23 295)",
-          "oklch(0.63 0.23 295)",
-          "oklch(0.75 0.23 295)",
-          "oklch(0.87 0.23 295)",
-          "oklch(0.95 0.23 295)"
+          "oklch(0.15 0.17 142)",
+          "oklch(0.27 0.17 142)",
+          "oklch(0.39 0.17 142)",
+          "oklch(0.51 0.17 142)",
+          "oklch(0.63 0.17 142)",
+          "oklch(0.75 0.17 142)",
+          "oklch(0.87 0.17 142)",
+          "oklch(0.95 0.17 142)"
         ]
       },
-      "grape-edge": {
+      "leaf-edge": {
         "role": "primary",
-        "displayName": "Grape Edge",
-        "canonical": "oklch(0.37 0.2 295)",
+        "displayName": "Leaf Edge",
+        "canonical": "oklch(0.42 0.14 145)",
         "tonalRamp": [
-          "oklch(0.15 0.2 295)",
-          "oklch(0.27 0.2 295)",
-          "oklch(0.39 0.2 295)",
-          "oklch(0.51 0.2 295)",
-          "oklch(0.63 0.2 295)",
-          "oklch(0.75 0.2 295)",
-          "oklch(0.87 0.2 295)",
-          "oklch(0.95 0.2 295)"
+          "oklch(0.15 0.14 145)",
+          "oklch(0.27 0.14 145)",
+          "oklch(0.39 0.14 145)",
+          "oklch(0.51 0.14 145)",
+          "oklch(0.63 0.14 145)",
+          "oklch(0.75 0.14 145)",
+          "oklch(0.87 0.14 145)",
+          "oklch(0.95 0.14 145)"
         ]
       },
-      "fawn": {
-        "role": "secondary",
-        "displayName": "Fawn",
-        "canonical": "oklch(0.84 0.1 78)",
+      "leaf-soft": {
+        "role": "primary",
+        "displayName": "Leaf Soft",
+        "canonical": "oklch(0.96 0.04 145)",
         "tonalRamp": [
-          "oklch(0.15 0.1 78)",
-          "oklch(0.27 0.1 78)",
-          "oklch(0.39 0.1 78)",
-          "oklch(0.51 0.1 78)",
-          "oklch(0.63 0.1 78)",
-          "oklch(0.75 0.1 78)",
-          "oklch(0.87 0.1 78)",
-          "oklch(0.95 0.1 78)"
+          "oklch(0.15 0.04 145)",
+          "oklch(0.27 0.04 145)",
+          "oklch(0.39 0.04 145)",
+          "oklch(0.51 0.04 145)",
+          "oklch(0.63 0.04 145)",
+          "oklch(0.75 0.04 145)",
+          "oklch(0.87 0.04 145)",
+          "oklch(0.95 0.04 145)"
         ]
       },
-      "fawn-edge": {
+      "sky": {
         "role": "secondary",
-        "displayName": "Fawn Edge",
-        "canonical": "oklch(0.68 0.12 68)",
+        "displayName": "Sky",
+        "canonical": "oklch(0.55 0.15 240)",
         "tonalRamp": [
-          "oklch(0.15 0.12 68)",
-          "oklch(0.27 0.12 68)",
-          "oklch(0.39 0.12 68)",
-          "oklch(0.51 0.12 68)",
-          "oklch(0.63 0.12 68)",
-          "oklch(0.75 0.12 68)",
-          "oklch(0.87 0.12 68)",
-          "oklch(0.95 0.12 68)"
+          "oklch(0.15 0.15 240)",
+          "oklch(0.27 0.15 240)",
+          "oklch(0.39 0.15 240)",
+          "oklch(0.51 0.15 240)",
+          "oklch(0.63 0.15 240)",
+          "oklch(0.75 0.15 240)",
+          "oklch(0.87 0.15 240)",
+          "oklch(0.95 0.15 240)"
+        ]
+      },
+      "sky-edge": {
+        "role": "secondary",
+        "displayName": "Sky Edge",
+        "canonical": "oklch(0.42 0.13 242)",
+        "tonalRamp": [
+          "oklch(0.15 0.13 242)",
+          "oklch(0.27 0.13 242)",
+          "oklch(0.39 0.13 242)",
+          "oklch(0.51 0.13 242)",
+          "oklch(0.63 0.13 242)",
+          "oklch(0.75 0.13 242)",
+          "oklch(0.87 0.13 242)",
+          "oklch(0.95 0.13 242)"
+        ]
+      },
+      "sun": {
+        "role": "tertiary",
+        "displayName": "Sun",
+        "canonical": "oklch(0.88 0.17 95)",
+        "tonalRamp": [
+          "oklch(0.15 0.17 95)",
+          "oklch(0.27 0.17 95)",
+          "oklch(0.39 0.17 95)",
+          "oklch(0.51 0.17 95)",
+          "oklch(0.63 0.17 95)",
+          "oklch(0.75 0.17 95)",
+          "oklch(0.87 0.17 95)",
+          "oklch(0.95 0.17 95)"
         ]
       },
       "bow": {
@@ -79,120 +109,105 @@
           "oklch(0.95 0.22 27)"
         ]
       },
-      "mint": {
+      "fawn": {
         "role": "tertiary",
-        "displayName": "Mint",
-        "canonical": "oklch(0.8 0.16 160)",
+        "displayName": "Fawn",
+        "canonical": "oklch(0.84 0.1 78)",
         "tonalRamp": [
-          "oklch(0.15 0.16 160)",
-          "oklch(0.27 0.16 160)",
-          "oklch(0.39 0.16 160)",
-          "oklch(0.51 0.16 160)",
-          "oklch(0.63 0.16 160)",
-          "oklch(0.75 0.16 160)",
-          "oklch(0.87 0.16 160)",
-          "oklch(0.95 0.16 160)"
-        ]
-      },
-      "sun": {
-        "role": "tertiary",
-        "displayName": "Sun",
-        "canonical": "oklch(0.9 0.17 95)",
-        "tonalRamp": [
-          "oklch(0.15 0.17 95)",
-          "oklch(0.27 0.17 95)",
-          "oklch(0.39 0.17 95)",
-          "oklch(0.51 0.17 95)",
-          "oklch(0.63 0.17 95)",
-          "oklch(0.75 0.17 95)",
-          "oklch(0.87 0.17 95)",
-          "oklch(0.95 0.17 95)"
-        ]
-      },
-      "lilac": {
-        "role": "neutral",
-        "displayName": "Lilac",
-        "canonical": "oklch(0.955 0.035 300)",
-        "tonalRamp": [
-          "oklch(0.15 0.035 300)",
-          "oklch(0.27 0.035 300)",
-          "oklch(0.39 0.035 300)",
-          "oklch(0.51 0.035 300)",
-          "oklch(0.63 0.035 300)",
-          "oklch(0.75 0.035 300)",
-          "oklch(0.87 0.035 300)",
-          "oklch(0.95 0.035 300)"
-        ]
-      },
-      "lilac-deep": {
-        "role": "neutral",
-        "displayName": "Lilac Deep",
-        "canonical": "oklch(0.86 0.06 300)",
-        "tonalRamp": [
-          "oklch(0.15 0.06 300)",
-          "oklch(0.27 0.06 300)",
-          "oklch(0.39 0.06 300)",
-          "oklch(0.51 0.06 300)",
-          "oklch(0.63 0.06 300)",
-          "oklch(0.75 0.06 300)",
-          "oklch(0.87 0.06 300)",
-          "oklch(0.95 0.06 300)"
-        ]
-      },
-      "lilac-art": {
-        "role": "neutral",
-        "displayName": "Lilac Art",
-        "canonical": "#cbbaf4",
-        "tonalRamp": [
-          "oklch(0.15 0.09 300)",
-          "oklch(0.27 0.09 300)",
-          "oklch(0.39 0.09 300)",
-          "oklch(0.51 0.09 300)",
-          "oklch(0.63 0.09 300)",
-          "oklch(0.75 0.09 300)",
-          "oklch(0.87 0.09 300)",
-          "oklch(0.95 0.09 300)"
+          "oklch(0.15 0.1 78)",
+          "oklch(0.27 0.1 78)",
+          "oklch(0.39 0.1 78)",
+          "oklch(0.51 0.1 78)",
+          "oklch(0.63 0.1 78)",
+          "oklch(0.75 0.1 78)",
+          "oklch(0.87 0.1 78)",
+          "oklch(0.95 0.1 78)"
         ]
       },
       "ink": {
         "role": "neutral",
         "displayName": "Ink",
-        "canonical": "oklch(0.24 0.05 295)",
+        "canonical": "oklch(0.27 0.03 160)",
         "tonalRamp": [
-          "oklch(0.15 0.05 295)",
-          "oklch(0.27 0.05 295)",
-          "oklch(0.39 0.05 295)",
-          "oklch(0.51 0.05 295)",
-          "oklch(0.63 0.05 295)",
-          "oklch(0.75 0.05 295)",
-          "oklch(0.87 0.05 295)",
-          "oklch(0.95 0.05 295)"
+          "oklch(0.15 0.03 160)",
+          "oklch(0.27 0.03 160)",
+          "oklch(0.39 0.03 160)",
+          "oklch(0.51 0.03 160)",
+          "oklch(0.63 0.03 160)",
+          "oklch(0.75 0.03 160)",
+          "oklch(0.87 0.03 160)",
+          "oklch(0.95 0.03 160)"
         ]
       },
       "ink-soft": {
         "role": "neutral",
         "displayName": "Ink Soft",
-        "canonical": "oklch(0.42 0.05 295)",
+        "canonical": "oklch(0.5 0.025 160)",
         "tonalRamp": [
-          "oklch(0.15 0.05 295)",
-          "oklch(0.27 0.05 295)",
-          "oklch(0.39 0.05 295)",
-          "oklch(0.51 0.05 295)",
-          "oklch(0.63 0.05 295)",
-          "oklch(0.75 0.05 295)",
-          "oklch(0.87 0.05 295)",
-          "oklch(0.95 0.05 295)"
+          "oklch(0.15 0.025 160)",
+          "oklch(0.27 0.025 160)",
+          "oklch(0.39 0.025 160)",
+          "oklch(0.51 0.025 160)",
+          "oklch(0.63 0.025 160)",
+          "oklch(0.75 0.025 160)",
+          "oklch(0.87 0.025 160)",
+          "oklch(0.95 0.025 160)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "oklch(0.9 0.008 150)",
+        "tonalRamp": [
+          "oklch(0.15 0.008 150)",
+          "oklch(0.27 0.008 150)",
+          "oklch(0.39 0.008 150)",
+          "oklch(0.51 0.008 150)",
+          "oklch(0.63 0.008 150)",
+          "oklch(0.75 0.008 150)",
+          "oklch(0.87 0.008 150)",
+          "oklch(0.95 0.008 150)"
+        ]
+      },
+      "line-deep": {
+        "role": "neutral",
+        "displayName": "Line Deep",
+        "canonical": "oklch(0.82 0.012 150)",
+        "tonalRamp": [
+          "oklch(0.15 0.012 150)",
+          "oklch(0.27 0.012 150)",
+          "oklch(0.39 0.012 150)",
+          "oklch(0.51 0.012 150)",
+          "oklch(0.63 0.012 150)",
+          "oklch(0.75 0.012 150)",
+          "oklch(0.87 0.012 150)",
+          "oklch(0.95 0.012 150)"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.39 0 0)",
+          "oklch(0.51 0 0)",
+          "oklch(0.63 0 0)",
+          "oklch(0.75 0 0)",
+          "oklch(0.87 0 0)",
+          "oklch(0.95 0 0)"
         ]
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Wordmark and screen titles in Fredoka 700."
+        "purpose": "Wordmark and screen titles in Rubik 800."
       },
       "button": {
         "displayName": "Button",
-        "purpose": "All control labels."
+        "purpose": "All control labels, uppercase with tracking."
       },
       "body": {
         "displayName": "Body",
@@ -202,15 +217,15 @@
     "shadows": [
       {
         "name": "pressed-edge",
-        "value": "border-bottom: 6px solid var(--chunk-edge)",
-        "purpose": "The one depth device: solid bottom edge that collapses to 2px on press."
+        "value": "border-bottom: 4px solid var(--chunk-edge)",
+        "purpose": "The one depth device: bordered control with a solid bottom edge that collapses to 2px on press."
       }
     ],
     "motion": [
       {
         "name": "ease-out",
         "value": "cubic-bezier(0.22, 1, 0.36, 1)",
-        "purpose": "Press and release of chunky controls, 120ms."
+        "purpose": "Press and release of controls, 120ms."
       }
     ],
     "breakpoints": [
@@ -225,70 +240,84 @@
       "name": "Create a room",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Create a room chunky button with a pressed bottom edge.",
-      "html": "<button class=\"ds-btn ds-btn-button-primary\">Create a room</button>",
-      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.75rem;padding:0 1.5rem;border:0;border-bottom:6px solid oklch(0.37 0.2 295);border-radius:1.25rem;background:oklch(0.5 0.23 295);color:#fff;font-family:Fredoka,ui-rounded,system-ui,sans-serif;font-size:1.25rem;font-weight:700;cursor:pointer;transition:transform 120ms cubic-bezier(.22,1,.36,1),border-bottom-width 120ms cubic-bezier(.22,1,.36,1)} .ds-btn:hover{filter:brightness(1.06)} .ds-btn:focus-visible{outline:3px solid oklch(0.5 0.23 295);outline-offset:3px} .ds-btn:active{transform:translateY(4px);border-bottom-width:2px}"
+      "description": "Create a room button with a bordered, pressed bottom edge.",
+      "html": "<button class=\"ds-btn\">CREATE A ROOM</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.5rem;padding:0 1.25rem;border:2px solid oklch(0.54 0.17 142);border-bottom:4px solid oklch(0.42 0.14 145);border-radius:.875rem;background:oklch(0.54 0.17 142);color:#fff;font-family:Rubik,ui-rounded,system-ui,sans-serif;font-size:1rem;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:transform 120ms cubic-bezier(.22,1,.36,1),border-bottom-width 120ms cubic-bezier(.22,1,.36,1)} .ds-btn:hover{filter:brightness(1.05)} .ds-btn:focus-visible{outline:3px solid oklch(0.55 0.15 240);outline-offset:3px} .ds-btn:active{transform:translateY(2px);border-bottom-width:2px}"
     },
     {
       "name": "Join with a code",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "Join with a code chunky button with a pressed bottom edge.",
-      "html": "<button class=\"ds-btn ds-btn-button-secondary\">Join with a code</button>",
-      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.75rem;padding:0 1.5rem;border:0;border-bottom:6px solid oklch(0.68 0.12 68);border-radius:1.25rem;background:oklch(0.84 0.1 78);color:oklch(0.24 0.05 295);font-family:Fredoka,ui-rounded,system-ui,sans-serif;font-size:1.25rem;font-weight:700;cursor:pointer;transition:transform 120ms cubic-bezier(.22,1,.36,1),border-bottom-width 120ms cubic-bezier(.22,1,.36,1)} .ds-btn:hover{filter:brightness(1.06)} .ds-btn:focus-visible{outline:3px solid oklch(0.5 0.23 295);outline-offset:3px} .ds-btn:active{transform:translateY(4px);border-bottom-width:2px}"
+      "description": "Join with a code button with a bordered, pressed bottom edge.",
+      "html": "<button class=\"ds-btn\">JOIN WITH A CODE</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.5rem;padding:0 1.25rem;border:2px solid oklch(0.9 0.008 150);border-bottom:4px solid oklch(0.82 0.012 150);border-radius:.875rem;background:#fff;color:oklch(0.27 0.03 160);font-family:Rubik,ui-rounded,system-ui,sans-serif;font-size:1rem;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:transform 120ms cubic-bezier(.22,1,.36,1),border-bottom-width 120ms cubic-bezier(.22,1,.36,1)} .ds-btn:hover{filter:brightness(1.05)} .ds-btn:focus-visible{outline:3px solid oklch(0.55 0.15 240);outline-offset:3px} .ds-btn:active{transform:translateY(2px);border-bottom-width:2px}"
     },
     {
       "name": "Leave game",
       "kind": "button",
       "refersTo": "button-danger",
-      "description": "Leave game chunky button with a pressed bottom edge.",
-      "html": "<button class=\"ds-btn ds-btn-button-danger\">Leave game</button>",
-      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.75rem;padding:0 1.5rem;border:0;border-bottom:6px solid oklch(0.44 0.19 27);border-radius:1.25rem;background:oklch(0.58 0.22 27);color:#fff;font-family:Fredoka,ui-rounded,system-ui,sans-serif;font-size:1.25rem;font-weight:700;cursor:pointer;transition:transform 120ms cubic-bezier(.22,1,.36,1),border-bottom-width 120ms cubic-bezier(.22,1,.36,1)} .ds-btn:hover{filter:brightness(1.06)} .ds-btn:focus-visible{outline:3px solid oklch(0.5 0.23 295);outline-offset:3px} .ds-btn:active{transform:translateY(4px);border-bottom-width:2px}"
+      "description": "Leave game button with a bordered, pressed bottom edge.",
+      "html": "<button class=\"ds-btn\">LEAVE GAME</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.5rem;padding:0 1.25rem;border:2px solid oklch(0.58 0.22 27);border-bottom:4px solid oklch(0.45 0.19 27);border-radius:.875rem;background:oklch(0.58 0.22 27);color:#fff;font-family:Rubik,ui-rounded,system-ui,sans-serif;font-size:1rem;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:transform 120ms cubic-bezier(.22,1,.36,1),border-bottom-width 120ms cubic-bezier(.22,1,.36,1)} .ds-btn:hover{filter:brightness(1.05)} .ds-btn:focus-visible{outline:3px solid oklch(0.55 0.15 240);outline-offset:3px} .ds-btn:active{transform:translateY(2px);border-bottom-width:2px}"
     },
     {
-      "name": "Start",
+      "name": "Learn more",
       "kind": "button",
-      "refersTo": "button-success",
-      "description": "Start chunky button with a pressed bottom edge.",
-      "html": "<button class=\"ds-btn ds-btn-button-success\">Start</button>",
-      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.75rem;padding:0 1.5rem;border:0;border-bottom:6px solid oklch(0.6 0.15 160);border-radius:1.25rem;background:oklch(0.8 0.16 160);color:oklch(0.24 0.05 295);font-family:Fredoka,ui-rounded,system-ui,sans-serif;font-size:1.25rem;font-weight:700;cursor:pointer;transition:transform 120ms cubic-bezier(.22,1,.36,1),border-bottom-width 120ms cubic-bezier(.22,1,.36,1)} .ds-btn:hover{filter:brightness(1.06)} .ds-btn:focus-visible{outline:3px solid oklch(0.5 0.23 295);outline-offset:3px} .ds-btn:active{transform:translateY(4px);border-bottom-width:2px}"
+      "refersTo": "button-info",
+      "description": "Learn more button with a bordered, pressed bottom edge.",
+      "html": "<button class=\"ds-btn\">LEARN MORE</button>",
+      "css": ".ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.5rem;padding:0 1.25rem;border:2px solid oklch(0.55 0.15 240);border-bottom:4px solid oklch(0.42 0.13 242);border-radius:.875rem;background:oklch(0.55 0.15 240);color:#fff;font-family:Rubik,ui-rounded,system-ui,sans-serif;font-size:1rem;font-weight:700;letter-spacing:.04em;cursor:pointer;transition:transform 120ms cubic-bezier(.22,1,.36,1),border-bottom-width 120ms cubic-bezier(.22,1,.36,1)} .ds-btn:hover{filter:brightness(1.05)} .ds-btn:focus-visible{outline:3px solid oklch(0.55 0.15 240);outline-offset:3px} .ds-btn:active{transform:translateY(2px);border-bottom-width:2px}"
     },
     {
-      "name": "Mascot Panel",
+      "name": "Card",
       "kind": "card",
-      "refersTo": "panel",
-      "description": "Lavender color-block tile for the pug host.",
-      "html": "<div class=\"ds-panel\" style=\"height:140px\"></div>",
-      "css": ".ds-panel{border-radius:2rem;border-bottom:6px solid oklch(0.7 0.11 298);background:#cbbaf4}"
+      "refersTo": "card",
+      "description": "Bordered surface with a pressed bottom edge for lists, clues and results.",
+      "html": "<div class=\"ds-card\" style=\"padding:1rem\">2 players ready</div>",
+      "css": ".ds-card{border:2px solid oklch(0.9 0.008 150);border-bottom:4px solid oklch(0.82 0.012 150);border-radius:1rem;background:#fff;color:oklch(0.27 0.03 160);font-family:Nunito,ui-rounded,system-ui,sans-serif;font-weight:700}"
+    },
+    {
+      "name": "Selected Card",
+      "kind": "card",
+      "refersTo": "card-selected",
+      "description": "Selected or ready state in Leaf Soft.",
+      "html": "<div class=\"ds-card-selected\" style=\"padding:1rem\">You are ready</div>",
+      "css": ".ds-card-selected{border:2px solid oklch(0.54 0.17 142);border-bottom:4px solid oklch(0.42 0.14 145);border-radius:1rem;background:oklch(0.96 0.04 145);color:oklch(0.27 0.03 160);font-family:Nunito,ui-rounded,system-ui,sans-serif;font-weight:700}"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "field",
-      "description": "White field with a thick lilac border and grape focus.",
+      "description": "White field with a 2px line border and a Sky focus ring.",
       "html": "<input class=\"ds-input\" placeholder=\"Your nickname\">",
-      "css": ".ds-input{min-height:3.5rem;padding:0 1rem;border:2px solid oklch(0.86 0.06 300);border-radius:1.5rem;background:#fff;color:oklch(0.24 0.05 295);font-family:Nunito,ui-rounded,system-ui,sans-serif;font-weight:700;font-size:1.125rem} .ds-input::placeholder{color:oklch(0.42 0.05 295)} .ds-input:focus-visible{outline:3px solid oklch(0.5 0.23 295);outline-offset:2px;border-color:oklch(0.5 0.23 295)}"
+      "css": ".ds-input{min-height:3.5rem;padding:0 1rem;border:2px solid oklch(0.9 0.008 150);border-radius:.875rem;background:#fff;color:oklch(0.27 0.03 160);font-family:Nunito,ui-rounded,system-ui,sans-serif;font-weight:700;font-size:1.125rem} .ds-input::placeholder{color:oklch(0.5 0.025 160)} .ds-input:focus-visible{outline:3px solid oklch(0.55 0.15 240);outline-offset:2px;border-color:oklch(0.55 0.15 240)}"
     }
   ],
   "narrative": {
-    "northStar": "The Pug's Playground",
-    "overview": "A toy-like operating screen: one pug host, bold flat colour on a lilac ground, and buttons that visibly sink when pressed. Encouraging, bold and legible, tactile; it rejects neon arcade looks and cutesy clutter.",
+    "northStar": "The Park Game Night",
+    "overview": "A clean white game UI for all ages: one confident green action per screen, bordered controls that press down, and a pug host standing right on the page. Encouraging, bold and legible, tactile; it rejects childish pastels, neon arcade looks and cutesy clutter.",
     "keyCharacteristics": [
-      "Chunky pressed-edge controls",
-      "Full named palette tinted from the pug art",
-      "Fredoka over Nunito at heavy weights",
-      "Light theme for direct sunlight"
+      "One Leaf-green primary action per screen",
+      "Bordered pressed-edge controls",
+      "Rubik over Nunito at heavy weights",
+      "Light theme for direct sunlight",
+      "Pug cut out directly on the page"
     ],
     "rules": [
       {
-        "name": "The Pressed-Edge Rule",
-        "body": "The 6px bottom edge is the one depth device, implemented as border-bottom.",
-        "section": "elevation"
+        "name": "The One Green Rule",
+        "body": "Leaf is the one go-signal; one primary action per screen.",
+        "section": "colors"
       },
       {
-        "name": "The Pug-Tinted Rule",
-        "body": "Neutrals lean violet; never grey or cream grounds.",
+        "name": "The Meaning Rule",
+        "body": "Sun, Bow, Sky and Fawn appear only when they carry meaning.",
         "section": "colors"
+      },
+      {
+        "name": "The Pressed-Edge Rule",
+        "body": "The 4px bottom edge is the one depth device, implemented as border-bottom.",
+        "section": "elevation"
       },
       {
         "name": "The Heavy Weight Rule",
@@ -297,14 +326,16 @@
       }
     ],
     "dos": [
-      "Do keep one primary action per screen",
+      "Do keep one primary Leaf action per screen",
       "Do keep every spoken clue visible as text",
+      "Do use Sky for focus",
       "Do honour prefers-reduced-motion"
     ],
     "donts": [
+      "Don't use pastel tints or bubbly fonts that read as a kids app",
       "Don't use neon arcade looks",
       "Don't scatter sparkles or emoji",
-      "Don't use grey or cream grounds"
+      "Don't use gradient text"
     ]
   }
 }
