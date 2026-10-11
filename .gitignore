@@ -1,0 +1,26 @@
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Devin local config (contains API key references)
+.devin/mcp_config.local.json
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+.turbo/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
