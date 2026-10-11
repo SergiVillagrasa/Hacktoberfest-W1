@@ -34,7 +34,7 @@ export function createMastraVision({ modelId, apiKey, compareDeadlineMs = JUDGE_
       async (attemptSignal) => {
         const res = await agent.generate(
           [{ role: 'user', content: [...images.map((image) => ({ type: 'image' as const, image: dataUrl(image) })), { type: 'text' as const, text }] }],
-          { structuredOutput: { schema, jsonPromptInjection: 'auto' }, abortSignal: attemptSignal, modelSettings: { maxRetries: 0 } },
+          { structuredOutput: { schema }, abortSignal: attemptSignal, modelSettings: { maxRetries: 0 } },
         );
         if (!res.object) throw new Error('Vision model returned no structured output');
         return schema.parse(res.object);
