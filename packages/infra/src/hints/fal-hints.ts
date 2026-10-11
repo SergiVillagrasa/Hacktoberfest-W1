@@ -19,7 +19,18 @@ const STYLE =
 
 export const buildHintPrompt = (action: string) => `${REFERENCES} ${action} ${STYLE}`;
 
-export const loadPugMascot = async () => new Uint8Array(await readFile(new URL('../../assets/pug-mascot.webp', import.meta.url)));
+const MASCOT_LOCATIONS = ['../../assets/pug-mascot.webp', './pug-mascot.webp'];
+
+export async function loadPugMascot(): Promise<Uint8Array> {
+  for (const location of MASCOT_LOCATIONS) {
+    try {
+      return new Uint8Array(await readFile(new URL(location, import.meta.url)));
+    } catch {
+      continue;
+    }
+  }
+  throw new Error('pug-mascot.webp not found next to the bundle or in packages/infra/assets');
+}
 
 export interface FalHintsOptions {
   mascot: Uint8Array;
