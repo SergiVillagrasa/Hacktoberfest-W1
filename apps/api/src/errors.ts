@@ -26,11 +26,17 @@ export class HttpError extends Error {
   }
 }
 
+const isClientError = (err: unknown): err is { status: number } => {
+  const status = (err as { status?: unknown } | null)?.status;
+  return typeof status === 'number' && status >= 400 && status < 500;
+};
+
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   const reply = (status: number, body: ApiError) => res.status(status).json(body);
   if (err instanceof HttpError) return reply(err.status, { code: err.code, message: err.message });
   if (err instanceof GameError) return reply(STATUS[err.code], { code: err.code, message: err.message });
-  if (err instanceof ZodError || err?.type === 'entity.parse.failed') return reply(400, { code: 'invalid_state', message: 'Invalid request' });
+  if (err instanceof ZodError) return reply(400, { code: 'invalid_state', message: 'Invalid request' });
+  if (isClientError(err)) return reply(err.status, { code: 'invalid_state', message: err.status === 413 ? 'Request body is too large' : 'Invalid request' });
   console.error(err);
   return reply(500, { code: 'invalid_state', message: 'Something went wrong' });
 };

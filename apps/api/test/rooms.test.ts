@@ -52,6 +52,15 @@ describe('rooms api', () => {
     expect((await request(app).post('/rooms').set('content-type', 'application/json').send('{oops')).status).toBe(400);
   });
 
+  test('oversized bodies are 413 and unsupported media is a 4xx, never a 500', async () => {
+    const big = await request(app).post('/rooms').send({ nickname: 'Ann', timeLimitMinutes: 10, padding: 'x'.repeat(11_000) });
+    expect(big.status).toBe(413);
+    expect(big.body).toEqual({ code: 'invalid_state', message: 'Request body is too large' });
+    const badCharset = await request(app).post('/rooms').set('content-type', 'application/json; charset=nope').send('{}');
+    expect(badCharset.status).toBeGreaterThanOrEqual(400);
+    expect(badCharset.status).toBeLessThan(500);
+  });
+
   test('DELETE player: creator only, auth required, 204 on success', async () => {
     const ann = await create();
     const bob = (await join(ann.roomCode, 'Bob')).body;
