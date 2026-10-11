@@ -9,3 +9,5 @@ export * from './domain/ranking';
 export * from './domain/races';
 export * from './domain/game';
 export * from './ports';
+export * from './usecases/rooms';
+export * from './testing/memory-game-repository';
