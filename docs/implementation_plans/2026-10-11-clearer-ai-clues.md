@@ -8,7 +8,7 @@ Replace the playful riddle style with easy, plain-English descriptions grounded 
 
 - `packages/infra/src/ai/prompts.ts`: update only `CLUES_PROMPT`, including a generic example unrelated to the two regression photos.
 - `packages/infra/test/clues-prompt.test.ts`: offline prompt-contract checks for grounding, directness, progressive hints, and privacy constraints. These do not prove semantic output quality.
-- `scripts/spikes/clue-spike.ts`: an explicit two-photo, single-pass Nebius comparison runner with no retries, no other providers, and private local result capture.
+- `scripts/spikes/clue-spike.ts`: a two-photo Nebius comparison runner with deadline-bounded backoff, no other providers, and private result capture outside the repository.
 
 ## Verification
 
@@ -17,3 +17,7 @@ Replace the playful riddle style with easy, plain-English descriptions grounded 
 3. Run the prompt and schema tests after the change, then one final offline test-suite pass and typecheck.
 4. Capture revised outputs on the same two photos, one Nebius call each; manually check visible accuracy, usefulness, second-hint progression, and privacy. Four paid Nebius calls total; no automatic reruns or LLM graders. Zero Fal, ElevenLabs, Google, database, deployment, or game-preparation calls.
 5. Review the complete diff. Keep private photos, results, and secrets out of git. The small comparison is a smoke check, not a broad quality benchmark.
+
+## Review follow-up
+
+The original four-call verification budget above describes the initial single-pass smoke check. Following PR review, future explicit runs use the existing retry helper with one 30-second deadline per photo; latency includes retries and is not a single-request benchmark. Each photo still produces one result row. Output must be outside the worktree, including after resolving symlinked parent directories. Do not rerun the private comparison automatically.
