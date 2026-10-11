@@ -54,6 +54,7 @@ export async function getView(deps: ViewDeps, game: Game, playerId: string, now:
       secondAudioUrl: playing && !visual && c.secondClueUsed ? await sign(assets.audio.second) : null,
       judgeBusyAudioUrl: playing && c.judgeBusyServed ? await sign(assets.audio.judgeBusy) : null,
       hintUrl: playing && visual ? await sign(assets.hintPath) : null,
+      hintStatus: visual ? (assets.hintPath ? 'ready' : assets.prep === 'ready' ? 'unavailable' : 'pending') : null,
       secondClueUsed: c.secondClueUsed,
       issuedAt: iso(c.issuedAt),
     };

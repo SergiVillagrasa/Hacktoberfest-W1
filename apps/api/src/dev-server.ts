@@ -6,7 +6,8 @@ import { createApp } from './app';
 
 /**
  * Local API with fake providers: no database, no AI and no cost. Rooms live in memory.
- * The judge verdict is controlled with POST /__fake/verdict?outcome=match|no_match|busy.
+ * The judge verdict is controlled with POST /__fake/verdict?outcome=match|no_match|busy, and picture generation
+ * can be made to fail with POST /__fake/hints?mode=fail (mode=ok restores it).
  */
 const port = Number(process.env.PORT ?? 8787);
 const origin = `http://localhost:${port}`;
@@ -22,6 +23,7 @@ const images: ImageStore = {
 const voice = new Uint8Array(await readFile(new URL('../../web/public/voice/find.mp3', import.meta.url)));
 const mascot = await loadPugMascot();
 let verdict: 'match' | 'no_match' | 'busy' = 'match';
+let hintsWork = true;
 let clueCount = 0;
 
 const evidence = (sameObject: boolean): MatchEvidence => ({ sameObject, confidence: sameObject ? 0.95 : 0.9, matchingFeatures: [], differences: [] });
@@ -45,7 +47,7 @@ const app = createApp({
     },
   },
   speech: { speak: async () => voice },
-  hints: { stylize: async () => mascot },
+  hints: { stylize: async () => (hintsWork ? mascot : Promise.reject(new Error('fake picture generator is down'))) },
   background: (task) => void task().catch((error) => console.error('background task failed', error)),
   now: () => new Date(),
   rng: Math.random,
@@ -65,6 +67,11 @@ app.post('/__fake/verdict', (req, res) => {
   const outcome = req.query.outcome;
   if (outcome === 'match' || outcome === 'no_match' || outcome === 'busy') verdict = outcome;
   res.json({ outcome: verdict });
+});
+
+app.post('/__fake/hints', (req, res) => {
+  if (req.query.mode === 'ok' || req.query.mode === 'fail') hintsWork = req.query.mode === 'ok';
+  res.json({ hints: hintsWork ? 'ok' : 'fail' });
 });
 
 app.listen(port, () => console.log(`SnapHunt fake API on ${origin} (judge verdict: ${verdict})`));
