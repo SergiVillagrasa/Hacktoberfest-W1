@@ -230,4 +230,44 @@ describe('preparation races', () => {
     const verdicts = (await s.games.loadByCode(c))!.targets.map((t) => t.validation).sort();
     expect(verdicts).toEqual(['accepted', 'rejected']);
   });
+
+  test('a duplicate rejection is revalidated when the compared target disappeared meanwhile', async () => {
+    const state = { armed: false, calls: 0 };
+    const s = setup();
+    const { ann, bob, code: c } = await lobby(s);
+    await submitTarget(s.deps, { code: c, playerId: bob.playerId, bytes: JPEG });
+    await s.runBackground();
+    s.vision.validateTarget = vi.fn(async (_image, others): Promise<TargetValidation> => {
+      if (!state.armed) return { accepted: true, reason: null, label: 'x' };
+      state.calls++;
+      if (state.calls === 1) {
+        const g = (await s.games.loadByCode(c))!;
+        await s.games.save({ ...g, players: g.players.filter((p) => p.id !== bob.playerId), targets: g.targets.filter((t) => t.ownerId !== bob.playerId) }, []);
+        return { accepted: false, reason: 'Same as another target', label: 'x' };
+      }
+      return others.length === 0 ? { accepted: true, reason: null, label: 'x' } : { accepted: false, reason: 'dup', label: 'x' };
+    });
+    state.armed = true;
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 2]) });
+    await s.runBackground();
+    expect(state.calls).toBe(2);
+    expect(await target(s, c, ann.playerId)).toMatchObject({ validation: 'accepted', assets: { prep: 'ready' } });
+  });
+
+  test('when the accepted set never settles the target is rejected, not left pending', async () => {
+    const s = setup();
+    const { ann, bob, code: c } = await lobby(s);
+    await submitTarget(s.deps, { code: c, playerId: bob.playerId, bytes: JPEG });
+    await s.runBackground();
+    let n = 0;
+    s.vision.validateTarget = vi.fn(async (): Promise<TargetValidation> => {
+      const g = (await s.games.loadByCode(c))!;
+      await s.games.save({ ...g, targets: g.targets.map((t) => (t.ownerId === bob.playerId ? { ...t, imagePath: `moving/${++n}.jpg` } : t)) }, []);
+      return { accepted: true, reason: null, label: 'x' };
+    });
+    s.deps.images.get = async () => new Uint8Array([0xff, 0xd8, 1]);
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 2]) });
+    await s.runBackground();
+    expect(await target(s, c, ann.playerId)).toMatchObject({ validation: 'rejected', rejectReason: JUDGE_DOWN_MESSAGE, assets: { prep: 'failed' } });
+  });
 });

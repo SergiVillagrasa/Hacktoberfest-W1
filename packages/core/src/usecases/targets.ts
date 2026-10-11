@@ -82,12 +82,15 @@ export async function prepareTarget(deps: TargetDeps, input: { code: string; tar
       const result: { outcome: 'stale' | 'changed' | 'applied' } = { outcome: 'applied' };
       await mutateGame(games, input.code, (g) => {
         if (!isCurrent(g.targets.find((t) => t.id === target.id))) return ((result.outcome = 'stale'), g);
-        if (verdict.accepted && acceptedPaths(g) !== seen) return ((result.outcome = 'changed'), g);
+        if (acceptedPaths(g) !== seen) return ((result.outcome = 'changed'), g);
         result.outcome = 'applied';
         return apply(g, (t) => ({ ...t, validation: verdict.accepted ? 'accepted' : 'rejected', rejectReason: verdict.accepted ? null : verdict.reason ?? 'That photo will not work, try another object' }));
       });
       if (result.outcome === 'stale') return;
-      if (result.outcome === 'changed' && round < MAX_PLAYERS) continue;
+      if (result.outcome === 'changed') {
+        if (round < MAX_PLAYERS) continue;
+        throw new Error('The accepted targets kept changing during validation');
+      }
       if (!verdict.accepted) return;
       break;
     }
