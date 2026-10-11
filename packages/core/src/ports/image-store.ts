@@ -5,7 +5,7 @@ export interface ImageStore {
 }
 
 export const storagePaths = {
-  target: (roomId: string, targetId: string) => `rooms/${roomId}/targets/${targetId}.jpg`,
+  target: (roomId: string, uploadId: string) => `rooms/${roomId}/targets/${uploadId}.jpg`,
   submission: (roomId: string, submissionId: string) => `rooms/${roomId}/submissions/${submissionId}.jpg`,
   audio: (roomId: string, targetId: string, kind: string) => `rooms/${roomId}/audio/${targetId}-${kind}.mp3`,
   hint: (roomId: string, targetId: string) => `rooms/${roomId}/hints/${targetId}.webp`,

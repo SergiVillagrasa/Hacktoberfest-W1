@@ -67,6 +67,32 @@ describe('submitTarget', () => {
     expect(second).toMatchObject({ id: first.id, validation: 'pending', assets: { prep: 'pending', clues: null } });
   });
 
+  test('overlapping first uploads from one player leave exactly one target', async () => {
+    const s = setup();
+    const { ann, code: c } = await lobby(s);
+    await Promise.all([
+      submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG }),
+      submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 8]) }),
+    ]);
+    expect((await s.games.loadByCode(c))!.targets).toHaveLength(1);
+  });
+
+  test('a rejected retake never overwrites the live reference photo', async () => {
+    const s = setup();
+    const { ann, code: c } = await lobby(s);
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG });
+    await s.runBackground();
+    const live = await target(s, c, ann.playerId);
+    const put = s.deps.images.put;
+    s.deps.images.put = async (path, bytes, type) => {
+      await put(path, bytes, type);
+      await s.games.save({ ...(await s.games.loadByCode(c))!, status: 'countdown' }, []);
+    };
+    expect(await code(submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 9]) }))).toBe('invalid_state');
+    expect((await target(s, c, ann.playerId)).imagePath).toBe(live.imagePath);
+    expect(s.files.get(live.imagePath)).toEqual(JPEG);
+  });
+
   test('rejects non-JPEG bytes and uploads after the game started', async () => {
     const s = setup();
     const { ann, code: c } = await lobby(s);

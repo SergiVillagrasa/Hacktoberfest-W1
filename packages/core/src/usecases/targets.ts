@@ -29,13 +29,16 @@ export async function submitTarget(deps: TargetDeps, input: { code: string; play
   if (game.status !== 'lobby') throw new GameError('invalid_state', 'The game already started');
   if (!game.players.some((p) => p.id === input.playerId)) throw new GameError('not_found', 'Player not found');
 
-  const targetId = game.targets.find((t) => t.ownerId === input.playerId)?.id ?? deps.newId();
-  const imagePath = storagePaths.target(game.roomId, targetId);
+  const imagePath = storagePaths.target(game.roomId, deps.newId());
   await deps.images.put(imagePath, input.bytes, 'image/jpeg');
-  const fresh: Target = { id: targetId, ownerId: input.playerId, imagePath, validation: 'pending', rejectReason: null, foundBy: null, foundAt: null, points: null, assets: emptyAssets() };
+  const newTargetId = deps.newId();
+  let targetId = newTargetId;
   await mutateGame(deps.games, input.code, (g) => {
     if (g.status !== 'lobby') throw new GameError('invalid_state', 'The game already started');
-    return { ...g, targets: g.targets.some((t) => t.id === targetId) ? g.targets.map((t) => (t.id === targetId ? fresh : t)) : [...g.targets, fresh] };
+    const existing = g.targets.find((t) => t.ownerId === input.playerId);
+    targetId = existing?.id ?? newTargetId;
+    const fresh: Target = { id: targetId, ownerId: input.playerId, imagePath, validation: 'pending', rejectReason: null, foundBy: null, foundAt: null, points: null, assets: emptyAssets() };
+    return { ...g, targets: existing ? g.targets.map((t) => (t.ownerId === input.playerId ? fresh : t)) : [...g.targets, fresh] };
   });
   deps.background(() => prepareTarget(deps, { code: input.code, targetId }));
   return { validation: 'pending' };
