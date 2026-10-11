@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Read `docs/architecture.md` before each task. Dependency direction is enforced: core imports nothing from infra/apps; web talks only to api.
-- Never read or print `.env`. Keys are backend-only (`apps/api`, `packages/infra`). Env names: `GOOGLE_AI_API_KEY`, `NEBIUS_API_KEY`, `ELEVENLABS_API_KEY`, `FAL_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, plus non-secret `VISION_MODEL` (default `google/gemma-4-31b-it`, fallback `nebius/Qwen/Qwen3.8-27B`), `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`. Every new name goes into `.env.example`.
+- Never read or print `.env`. Keys are backend-only (`apps/api`, `packages/infra`). Env names: `GOOGLE_AI_API_KEY`, `NEBIUS_API_KEY`, `ELEVENLABS_API_KEY`, `FAL_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, plus non-secret `VISION_MODEL` (default `nebius/Qwen/Qwen3.8-27B`, fallback `google/gemma-4-31b-it`; decided by the spike), `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`. Every new name goes into `.env.example`.
 - Pin exact dependency versions, each published at least 7 days ago (check `npm view <pkg> time`). Add deps from the repo root with `bun add`; commit `bun.lock`.
 - All packages are ESM (`"type": "module"`), `tsconfig` target ES2022, strict.
 - The user merges every PR; agents push and open PRs but never merge. Because of that, a task whose code depends on unmerged work stacks on that branch (PR base = parent branch). `eng-{n}` numbers in task headings are indicative; always take the next free number per the `branch-naming` skill. A task may be split into more PRs when it would exceed the size rule.
