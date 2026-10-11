@@ -40,6 +40,9 @@
     "packages/infra": {
       "name": "@snaphunt/infra",
       "version": "0.0.0",
+      "dependencies": {
+        "@snaphunt/core": "workspace:*",
+      },
     },
   },
   "packages": {
