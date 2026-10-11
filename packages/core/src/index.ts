@@ -7,3 +7,4 @@ export * from './domain/derangement';
 export * from './domain/scoring';
 export * from './domain/ranking';
 export * from './domain/races';
+export * from './domain/game';
