@@ -7,5 +7,10 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@snaphunt/contracts": "workspace:*",
+    "@snaphunt/core": "workspace:*",
+    "@snaphunt/infra": "workspace:*"
   }
 }
