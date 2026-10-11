@@ -3,7 +3,7 @@
 
 usage: mascot-cutout.py in.webp out.webp [--shadow R,G,B]
 
-The background colour is sampled from the top-left pixel. Pixels connected to the border that match it
+The background colour is sampled from the top-left pixel. Pixels that match it (connected to the border or enclosed)
 become transparent, pixels matching the shadow colour become a soft neutral translucent shadow, and the
 one-pixel fringe around the cut takes the colour of its inner neighbours so no lavender halo remains.
 The result is trimmed to the artwork's bounding box plus 16px.
@@ -40,6 +40,16 @@ while queue:
     if dist(p, bg) <= BG_TOL or dist(p, shadow) <= SHADOW_TOL:
         kind[y][x] = 2 if dist(p, shadow) < dist(p, bg) else 1
         queue.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+
+# Enclosed pockets (for example between a raised arm and the head) are not reachable from the border.
+for y in range(h):
+    for x in range(w):
+        if not kind[y][x]:
+            p = px[x, y]
+            if dist(p, bg) <= BG_TOL:
+                kind[y][x] = 1
+            elif dist(p, shadow) <= SHADOW_TOL:
+                kind[y][x] = 2
 
 out = Image.new('RGBA', (w, h), (0, 0, 0, 0))
 op = out.load()

@@ -1,0 +1,4 @@
+{
+  "prompt": "Keep this exact pug mascot: same simple flat 2D vector style, same fawn body, dark brown muzzle and ears, big round dark eyes with thick white rings, small forehead wrinkles, plain solid red bow tie, bold dark outlines, solid flat colors, no shading. No blush or pink cheeks and no whiskers. Keep the same plain flat lavender background (#cbbaf4) and the same soft ground shadow under the pug. Full body, centered, no text, no extra characters. The pug is holding a round stopwatch in both front paws in front of its chest, looking determined and ready to go, a focused smile. The stopwatch has no numbers or text.\n\nModel: fal-ai/nano-banana-2/edit with the canonical pug (packages/infra/assets/pug-mascot.webp) as the single reference image, 1K, WebP. Post-processed with scripts/mascot-cutout.py (background cut out, ground shadow recoloured, trimmed). Generated 2026-10-11; approved by the product owner.",
+  "createdAt": "2026-10-11T14:45:08.798Z"
+}
