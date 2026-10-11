@@ -272,7 +272,7 @@ export function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>, opts: { de
 
 **Files:** Create `packages/infra/src/voice/elevenlabs-speech.ts`, `packages/infra/src/hints/fal-hints.ts`; ports `SpeechSynth`, `HintGenerator` in core. Add `@elevenlabs/elevenlabs-js`, `@fal-ai/client`.
 
-**Interfaces:** `interface SpeechSynth { speak(text: string): Promise<Uint8Array> }` (mp3; one fixed game-show-host voice id chosen with the ElevenLabs CLI/text-to-speech skill and stored as constant `HOST_VOICE_ID`). `interface HintGenerator { stylize(imageUrl: string): Promise<Uint8Array> }` using `fal-ai/nano-banana-2/edit`, one image, 1K, WebP, prompt per `fal-prompting` skill: "stylized cheerful cartoon illustration of only the main object, same silhouette and distinctive non-text features, plain pastel background, no text, no labels, no surroundings".
+**Interfaces:** `interface SpeechSynth { speak(text: string): Promise<Uint8Array> }` (mp3; one fixed game-show-host voice id chosen with the ElevenLabs CLI/text-to-speech skill and stored as constant `HOST_VOICE_ID`). `interface HintGenerator { stylize(imageUrl: string): Promise<Uint8Array> }` using `fal-ai/nano-banana-2/edit`, one image, 1K, WebP. Two reference images: the target photo and the canonical pug (`packages/infra/assets/pug-mascot.webp`, uploaded once to Fal storage). The prompt keeps the pug exactly as designed (flat style, plain red bow tie, no blush, no whiskers), redraws the object as a simplified cartoon, and adds one random action from `PUG_ACTIONS` (hug, peek and point, detective, balance on head, sniff). The asset is read with `fs` relative to `import.meta.url`; confirm it is bundled in the Vercel deployment (Task 17).
 - [ ] Step 1: Manual check: speak "Welcome to SnapHunt!" → playable mp3; stylize a spike photo → WebP that passes the brief's visual-clue acceptance contract by eye.
 - [ ] Step 2: Commit; PR `feat(infra): add elevenlabs speech and fal hint adapters`.
 
@@ -351,7 +351,7 @@ export function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>, opts: { de
 **Files:** `apps/web/public/mascot/{idle,talking,thinking,celebrating,sad,shocked,countdown,trophy}.webp`; `src/components/mascot/Mascot.tsx`.
 
 **Interfaces:** `<Mascot state={'idle'|'talking'|'thinking'|'celebrating'|'sad'|'shocked'|'countdown'|'trophy'} line?: string />` — pose image + CSS animation per state (bob, wiggle, bounce, shake), speech bubble with `line`, respects `prefers-reduced-motion`.
-- [ ] Step 1: Generate one base character with Fal (text-to-image), then each pose with `fal-ai/nano-banana-2/edit` from the base for consistency; ≤ 80 KB each. Show the set to the user for approval before committing.
+- [ ] Step 1: The mascot is the pug. Use the approved canonical pug (`packages/infra/assets/pug-mascot.webp`) as the base, then generate each pose with `fal-ai/nano-banana-2/edit` from it for consistency (same flat style, no blush, no whiskers); ≤ 80 KB each. Show the set to the user for approval before committing.
 - [ ] Step 1b: Generate generic host announcement clips once with the ElevenLabs CLI (same `HOST_VOICE_ID`) into `apps/web/public/voice/{find,eliminated,solo,winner,countdown,welcome}.mp3` — no player names, so they can be static.
 - [ ] Step 2: Build passes; dev page `/dev/mascot` (removed before merge, or behind `NODE_ENV !== 'production'`) shows all states.
 - [ ] Step 3: Commit; PR `feat(web): add animated game-show host mascot`.
