@@ -1,10 +1,10 @@
 import { RoomView } from '@snaphunt/contracts';
 import { describe, expect, test } from 'vitest';
-import { createMemoryGameRepository, getView, type Game, type ImageStore } from '../src';
+import { createMemoryGameRepository, createMemorySubmissionRepository, getView, type Game, type ImageStore } from '../src';
 import { T0, makeClue, makeGame, makePlayer, makeTarget } from './fixtures';
 
 const images: ImageStore = { put: async () => {}, get: async () => new Uint8Array(), signedUrl: async (path) => `https://signed/${path}` };
-const deps = () => ({ games: createMemoryGameRepository(), images });
+const deps = () => ({ games: createMemoryGameRepository(), submissions: createMemorySubmissionRepository(), images });
 const assetsFor = (n: string) => ({
   prep: 'ready' as const,
   clues: { first: `first-${n}`, second: `second-${n}`, visual: `visual-${n}`, judgeBusy: `busy-${n}` },
@@ -82,6 +82,17 @@ describe('getView visibility', () => {
     expect(v.ranking![0]).toMatchObject({ playerId: 'a', score: 900, rank: 1 });
     expect(v.recap).toHaveLength(3);
     expect(v.recap!.find((r) => r.targetId === 'tb')).toMatchObject({ ownerNickname: 'B', finderNickname: 'A', originalUrl: 'https://signed/photo-b.jpg', points: 900 });
+  });
+
+  test('the recap links each find to the photo that proved it', async () => {
+    const d = deps();
+    const g = activeGame({ status: 'finished' });
+    g.targets[1] = { ...g.targets[1]!, foundBy: 'a', foundAt: T0, points: 900 };
+    await d.submissions.record({ id: 's1', roomId: g.roomId, clueId: 'ca', playerId: 'a', idempotencyKey: 'k1', imagePath: 'find-1.jpg', outcome: 'match', points: 900, evidence: null, createdAt: T0 });
+    await d.submissions.record({ id: 's2', roomId: g.roomId, clueId: 'cb', playerId: 'b', idempotencyKey: 'k2', imagePath: 'miss.jpg', outcome: 'no_match', points: null, evidence: null, createdAt: T0 });
+    const recap = (await getView(d, g, 'c', T0)).recap!;
+    expect(recap.find((r) => r.targetId === 'tb')!.findPhotoUrl).toBe('https://signed/find-1.jpg');
+    expect(recap.find((r) => r.targetId === 'tc')!.findPhotoUrl).toBeNull();
   });
 
   test('me.attemptsLeft and unknown players', async () => {

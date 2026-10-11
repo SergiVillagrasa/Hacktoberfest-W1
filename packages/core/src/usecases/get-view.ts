@@ -3,10 +3,11 @@ import { MAX_FAILED_ATTEMPTS } from '../domain/constants';
 import { GameError } from '../domain/errors';
 import { rankPlayers } from '../domain/ranking';
 import type { Clue, DomainEvent, Game, Target } from '../domain/types';
-import type { GameRepository, ImageStore } from '../ports';
+import type { GameRepository, ImageStore, SubmissionRepository } from '../ports';
 
 export interface ViewDeps {
   games: GameRepository;
+  submissions: SubmissionRepository;
   images: ImageStore;
 }
 
@@ -67,6 +68,8 @@ export async function getView(deps: ViewDeps, game: Game, playerId: string, now:
   ]);
   const feed: FeedItem[] = events.map((e) => ({ at: iso(e.at), type: e.type, text: feedText(e, name), photoUrl: null }));
 
+  const matches = finished ? await deps.submissions.listMatches(game.roomId) : [];
+  const findPhotoOf = (targetId: string) => matches.find((m) => game.clues.find((c) => c.id === m.clueId)?.targetId === targetId)?.imagePath ?? null;
   const recap: RecapItem[] | null = finished
     ? await Promise.all(
         game.targets.map(async (t) => ({
@@ -74,7 +77,7 @@ export async function getView(deps: ViewDeps, game: Game, playerId: string, now:
           ownerNickname: name(t.ownerId),
           finderNickname: t.foundBy ? name(t.foundBy) : null,
           originalUrl: (await sign(t.imagePath))!,
-          findPhotoUrl: null,
+          findPhotoUrl: await sign(findPhotoOf(t.id)),
           clueText: t.assets.clues?.first ?? null,
           clueAudioUrl: await sign(t.assets.audio.first),
           hintUrl: await sign(t.assets.hintPath),
