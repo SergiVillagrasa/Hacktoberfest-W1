@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import { hashToken, newToken } from './auth';
 import { errorHandler } from './errors';
+import { gameRoutes } from './routes/game';
 import { roomRoutes } from './routes/rooms';
 import { targetRoutes } from './routes/targets';
 
@@ -20,6 +21,7 @@ export function createApp(deps: AppDeps): Express {
   app.use(targetRoutes(deps));
   app.use(express.json({ limit: '10kb' }));
   app.use(roomRoutes({ ...deps, newToken, hashToken }));
+  app.use(gameRoutes(deps));
   app.use(errorHandler);
   return app;
 }
