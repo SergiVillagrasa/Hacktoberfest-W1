@@ -3,3 +3,5 @@ export * from './db/client';
 export * from './db/game-repository';
 export * from './db/submission-repository';
 export * from './storage/supabase-image-store';
+export * from './ai/retry';
+export * from './ai/vision-mastra';

@@ -32,3 +32,4 @@ export interface SubmissionRepository {
   record(submission: StoredSubmission): Promise<void>;
 }
 export * from './image-store';
+export * from './vision';
