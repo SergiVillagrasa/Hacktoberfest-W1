@@ -2,7 +2,7 @@ Always read docs/architecture.md before starting
 
 ## Development setup
 
-- Required env vars live in `.env` at the repo root; see `.env.example` for the five keys. `.env` is gitignored — never commit it and never read it (agents must not print secret values).
+- Required env vars live in `.env` at the repo root; see `.env.example` for the required variables. `.env` is gitignored — never commit it and never read it (agents must not print secret values).
 - All keys are backend-only; the frontend must never see them.
 - MCP servers: `supabase` is committed in `.devin/mcp_config.json`; `fal` is local-only in `.devin/mcp_config.local.json` (gitignored). `linear` and `devrelay-gateway` are configured at user level. Supabase is a hosted server that prompts for OAuth sign-in on first use and is scoped to project `HacktoberfestW1` (ref `dmlqbxugaepphtshekah`, eu-west-1), which matches `SUPABASE_URL`.
 - ElevenLabs does not use an MCP server: its hosted MCP requires OAuth without dynamic client registration, which Devin CLI could not complete. Use the ElevenLabs CLI instead (`elevenlabs`, `@elevenlabs/cli` 1.4.0, installed with `npm i -g --prefix ~/.local` because the global npm prefix is root-owned) and the user-level ElevenLabs skills in `~/.config/devin/skills` (installed with `npx skills add elevenlabs/skills -g -a devin`; never install them project-level, since that would create `.agents/` in this repo). The CLI is signed in via `elevenlabs auth login`; when `ELEVENLABS_API_KEY` is set in the environment it takes precedence over the stored login. The app backend calls the ElevenLabs API directly with `ELEVENLABS_API_KEY`.
