@@ -1,8 +1,5 @@
 import type { RoomView } from '@snaphunt/contracts';
-
-export function sortedPlayers(players: RoomView['players']): RoomView['players'] {
-  return [...players].sort((a, b) => b.score - a.score || b.finds - a.finds || a.nickname.localeCompare(b.nickname));
-}
+import { sortedPlayers } from '@/lib/results';
 
 export function Scoreboard({ players, meId }: { players: RoomView['players']; meId: string }) {
   return (

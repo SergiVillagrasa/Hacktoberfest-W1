@@ -6,6 +6,8 @@ import { use, useEffect } from 'react';
 import { Countdown } from '@/components/game/Countdown';
 import { Hunt } from '@/components/game/Hunt';
 import { Lobby } from '@/components/game/Lobby';
+import { Results } from '@/components/game/Results';
+import { Spectator } from '@/components/game/Spectator';
 import { Mascot } from '@/components/mascot/Mascot';
 import { ScreenShell } from '@/components/ui/ScreenShell';
 import { useRoomView } from '@/lib/sse';
@@ -51,10 +53,12 @@ export default function RoomPage({ params }: { params: Promise<{ code: string }>
         <Lobby code={code} token={token} view={view} refresh={refresh} />
       ) : view.status === 'countdown' ? (
         <Countdown view={view} clockOffsetMs={clockOffsetMs} />
-      ) : view.status === 'active' && view.me.status === 'active' ? (
+      ) : view.status === 'finished' ? (
+        <Results view={view} />
+      ) : view.me.status === 'active' ? (
         <Hunt code={code} token={token} view={view} clockOffsetMs={clockOffsetMs} refresh={refresh} />
       ) : (
-        <Mascot state="talking" size="md" line={view.status === 'finished' ? 'The game is over!' : "You're out of the hunt, but you can watch!"} />
+        <Spectator view={view} clockOffsetMs={clockOffsetMs} />
       )}
     </ScreenShell>
   );

@@ -5,11 +5,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { VisualClueCard } from '@/components/clues/VisualClueCard';
 import { VoiceClueCard } from '@/components/clues/VoiceClueCard';
 import { Mascot } from '@/components/mascot/Mascot';
-import type { MascotState } from '@/components/mascot/states';
-import { announcementFor, feedKey, freshItems } from '@/lib/announcements';
 import { playClue, playHostClip } from '@/lib/audio';
 import { api, errorMessage } from '@/lib/client';
 import { scrollToTop } from '@/lib/scroll';
+import { useHostMood, type Mood } from '@/lib/useHostMood';
 import { AttemptsDots } from './AttemptsDots';
 import { Feed } from './Feed';
 import { Scoreboard } from './Scoreboard';
@@ -24,39 +23,22 @@ interface HuntProps {
   refresh: () => void;
 }
 
-interface Mood {
-  state: MascotState;
-  line: string;
-}
-
 const IDLE: Mood = { state: 'idle', line: 'Find it and snap it!' };
 
 export function Hunt({ code, token, view, clockOffsetMs, refresh }: HuntProps) {
-  const [moment, setMoment] = useState<Mood | null>(null);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [asking, setAsking] = useState(false);
-  const momentTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const spokenClues = useRef(new Set<string>());
   const bonusPlayed = useRef(new Set<string>());
-  const seenFeed = useRef<Set<string> | null>(null);
-  const ownResultUntil = useRef(0);
   const me = view.players.find((p) => p.id === view.me.playerId);
   const clues = view.myClues.filter((c) => c.status === 'active');
-
-  const say = useCallback((state: MascotState, line: string, ms = 4500, bringIntoView = false) => {
-    clearTimeout(momentTimer.current);
-    setMoment({ state, line });
-    momentTimer.current = setTimeout(() => setMoment(null), ms);
-    if (bringIntoView) scrollToTop();
-  }, []);
+  const { moment, say, stayQuiet } = useHostMood(view.feed);
 
   const speak = useCallback((url: string, text: string) => {
     setSpeaking(text);
     void playClue(url, undefined, () => setSpeaking(null)).then((ok) => !ok && setSpeaking(null));
   }, []);
-
-  useEffect(() => () => clearTimeout(momentTimer.current), []);
 
   // Read each new clue aloud once; it stays on screen as text either way.
   useEffect(() => {
@@ -72,23 +54,8 @@ export function Hunt({ code, token, view, clockOffsetMs, refresh }: HuntProps) {
     }
   }, [clues, speak]);
 
-  // Announce what happens around the table, without replaying history on first load.
-  useEffect(() => {
-    if (seenFeed.current === null) {
-      seenFeed.current = new Set(view.feed.map(feedKey));
-      return;
-    }
-    for (const item of freshItems(seenFeed.current, view.feed)) {
-      seenFeed.current.add(feedKey(item));
-      const announcement = announcementFor(item);
-      if (!announcement || Date.now() < ownResultUntil.current) continue;
-      say(announcement.state, announcement.line);
-      if (announcement.clip) void playHostClip(announcement.clip);
-    }
-  }, [view.feed, say]);
-
   function onResult(result: SubmitResult) {
-    ownResultUntil.current = Date.now() + 6000;
+    stayQuiet(6000);
     const points = result.points ? ` +${result.points} points` : '';
     if (result.outcome === 'match') {
       say('celebrating', `${result.message}${points}`, 6000, true);
