@@ -34,6 +34,15 @@ test('record then findByKey round-trips including points and evidence', async ()
   expect(await repo.findByKey(sub.idempotencyKey)).toEqual(sub);
 });
 
+test('listMatches returns only scoring submissions of the room', async () => {
+  await repo.record(sub);
+  await repo.record({ ...sub, id: id(), idempotencyKey: id(), outcome: 'no_match', points: null });
+  const matches = await repo.listMatches(sub.roomId);
+  expect(matches).toHaveLength(1);
+  expect(matches[0]).toMatchObject({ outcome: 'match', imagePath: 's.jpg' });
+  expect(await repo.listMatches(id())).toEqual([]);
+});
+
 test('recording the same idempotency key twice keeps the first result', async () => {
   await repo.record(sub);
   await repo.record({ ...sub, id: id(), outcome: 'no_match', points: null });

@@ -6,7 +6,7 @@ import { ZodError } from 'zod';
 const STATUS: Record<GameErrorCode, number> = {
   not_found: 404,
   forbidden: 403,
-  not_active_player: 403,
+  not_active_player: 409,
   invalid_state: 409,
   room_full: 409,
   not_ready: 409,

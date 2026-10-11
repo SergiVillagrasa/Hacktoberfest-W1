@@ -1,4 +1,4 @@
-import { createMemoryGameRepository, seededRng, type ImageStore } from '@snaphunt/core';
+import { createMemoryGameRepository, createMemorySubmissionRepository, seededRng, type ImageStore } from '@snaphunt/core';
 import type { AppDeps } from '../src/app';
 
 export function makeDeps(overrides: Partial<AppDeps> = {}) {
@@ -12,6 +12,7 @@ export function makeDeps(overrides: Partial<AppDeps> = {}) {
   };
   const deps: AppDeps = {
     games: createMemoryGameRepository(),
+    submissions: createMemorySubmissionRepository(),
     images,
     vision: {
       validateTarget: async () => ({ accepted: true, reason: null, label: 'thing' }),

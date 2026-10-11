@@ -12,3 +12,8 @@ export * from './ports';
 export * from './usecases/rooms';
 export * from './testing/memory-game-repository';
 export * from './usecases/targets';
+export * from './usecases/start-and-tick';
+export * from './usecases/get-view';
+export * from './usecases/second-clue';
+export * from './usecases/submit-find';
+export * from './testing/memory-submission-repository';

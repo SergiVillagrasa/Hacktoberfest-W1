@@ -31,6 +31,8 @@ export interface GameRepository {
 export interface SubmissionRepository {
   findByKey(key: string): Promise<StoredSubmission | null>;
   record(submission: StoredSubmission): Promise<void>;
+  /** Submissions that scored a find in this room. */
+  listMatches(roomId: string): Promise<StoredSubmission[]>;
 }
 export * from './image-store';
 export * from './vision';
