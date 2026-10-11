@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { expect, test } from 'vitest';
 import { ROOM_CODE_ALPHABET, ROOM_CODE_LENGTH, generateRoomCode, seededRng } from '../src';
 
 test('room codes are 5 chars from the alphabet', () => {

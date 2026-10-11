@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { expect, test } from 'vitest';
 import { GameError, createDerangement, seededRng } from '../src';
 
 test('derangement has no fixed points and is a permutation', () => {
