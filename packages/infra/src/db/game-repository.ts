@@ -36,13 +36,28 @@ async function writeChildren(tx: Db, game: Game, tokenHashes: Record<string, str
   if (evs.length) await tx.insert(events).values(evs.map(({ type, at, ...payload }) => ({ roomId, at, type, payload })));
 }
 
+const UNIQUE_VIOLATION = '23505';
+
+function isUniqueViolation(error: unknown, constraint: string): boolean {
+  for (let e = error as { code?: string; constraint?: string; constraint_name?: string; cause?: unknown } | undefined; e; e = e.cause as typeof e) {
+    if (e.code === UNIQUE_VIOLATION && (e.constraint ?? e.constraint_name) === constraint) return true;
+  }
+  return false;
+}
+
 export function createGameRepository(db: Db): GameRepository {
   return {
     async create(game, tokenHashes) {
-      await db.transaction(async (tx) => {
-        await tx.insert(rooms).values({ id: game.roomId, ...roomColumns(game), version: game.version });
-        await writeChildren(tx, game, tokenHashes, []);
-      });
+      try {
+        await db.transaction(async (tx) => {
+          await tx.insert(rooms).values({ id: game.roomId, ...roomColumns(game), version: game.version });
+          await writeChildren(tx, game, tokenHashes, []);
+        });
+        return true;
+      } catch (e) {
+        if (isUniqueViolation(e, 'rooms_code_unique')) return false;
+        throw e;
+      }
     },
 
     async loadByCode(code) {

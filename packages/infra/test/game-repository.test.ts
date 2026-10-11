@@ -55,6 +55,15 @@ describe('game repository', () => {
     expect(await repo.loadByCode('ZZZZZ')).toBeNull();
   });
 
+  test('create reports a taken room code without writing anything', async () => {
+    const other = { ...makeGame(), code: 'ABCDE' };
+    const otherHashes = { [other.players[0]!.id]: 'x1', [other.players[1]!.id]: 'x2' };
+    expect(await repo.create(other, otherHashes)).toBe(false);
+    expect(await repo.loadByCode('ABCDE')).toEqual(game);
+    expect(await repo.findPlayerByTokenHash('x1')).toBeNull();
+    expect(await repo.create({ ...other, code: 'FGHJK' }, otherHashes)).toBe(true);
+  });
+
   test('save bumps the version, persists changes and appends events', async () => {
     const changed: Game = { ...game, phase: 'solo', players: [{ ...game.players[0]!, failedAttempts: 2 }, game.players[1]!] };
     const saved = await repo.save(changed, [{ type: 'solo_mode', at: T0 }]);
