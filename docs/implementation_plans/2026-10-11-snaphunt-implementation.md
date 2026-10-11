@@ -6,14 +6,14 @@
 
 **Architecture:** Bun monorepo with hexagonal layering per `docs/architecture.md`. All game rules are pure functions in `packages/core` over a `Game` aggregate, persisted by Drizzle with optimistic version checks; Express (one Vercel Function) composes use cases with adapters; Next.js web talks only to the API over HTTP + SSE (SSE polls the room version once per second).
 
-**Tech Stack:** TypeScript (ESM, ES2022), Bun 1.4 workspaces + `bun test`, Next.js 16 App Router + HeroUI v3 + Tailwind v4, Express 5, Drizzle ORM + `postgres` (postgres-js) on Supabase Postgres, PGlite for repository tests, Supabase Storage, Zod 4, Mastra (`@mastra/core`), ElevenLabs JS SDK, `@fal-ai/client`, `@vercel/functions`.
+**Tech Stack:** TypeScript (ESM, ES2022), Bun 1.4 workspaces + Vitest, Next.js 16 App Router + HeroUI v3 + Tailwind v4, Express 5, Drizzle ORM + `postgres` (postgres-js) on Supabase Postgres, PGlite for repository tests, Supabase Storage, Zod 4, Mastra (`@mastra/core`), ElevenLabs JS SDK, `@fal-ai/client`, `@vercel/functions`.
 
 **Spec:** `docs/design_plans/2026-10-11-snaphunt-game-design.md` (read it with this plan; also `docs/architecture.md`, `docs/product-brief.md`, `AGENTS.md`).
 
 ## Global Constraints
 
 - Read `docs/architecture.md` before each task. Dependency direction is enforced: core imports nothing from infra/apps; web talks only to api.
-- Never read or print `.env`. Keys are backend-only (`apps/api`, `packages/infra`). Env names: `GOOGLE_AI_API_KEY`, `NEBIUS_API_KEY`, `ELEVENLABS_API_KEY`, `FAL_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, plus non-secret `VISION_MODEL` (default `google/gemma-4-31b-it`, fallback `nebius/Qwen/Qwen3.8-27B`), `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`. Every new name goes into `.env.example`.
+- Never read or print `.env`. Keys are backend-only (`apps/api`, `packages/infra`). Env names: `GOOGLE_AI_API_KEY`, `NEBIUS_API_KEY`, `ELEVENLABS_API_KEY`, `FAL_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, plus non-secret `VISION_MODEL` (default `nebius/Qwen/Qwen3.8-27B`, fallback `google/gemma-4-31b-it`; decided by the spike), `WEB_ORIGIN`, `NEXT_PUBLIC_API_URL`. Every new name goes into `.env.example`.
 - Pin exact dependency versions, each published at least 7 days ago (check `npm view <pkg> time`). Add deps from the repo root with `bun add`; commit `bun.lock`.
 - All packages are ESM (`"type": "module"`), `tsconfig` target ES2022, strict.
 - The user merges every PR; agents push and open PRs but never merge. Because of that, a task whose code depends on unmerged work stacks on that branch (PR base = parent branch). `eng-{n}` numbers in task headings are indicative; always take the next free number per the `branch-naming` skill. A task may be split into more PRs when it would exceed the size rule.
@@ -22,7 +22,7 @@
 - Every vision call retries with exponential backoff (500 ms, 1 s, 2 s, 4 s…) inside its deadline and is idempotent; retries never award points or consume attempts twice.
 - Original target photos are never exposed to other players before the game is `finished`.
 - Frontend work (Tasks 18–23) goes through Impeccable (`/impeccable` shape → craft → critique); copy is English, friendly, short.
-- Tests: `bun test` from the repo root runs all package tests. Each task's verification also runs `bun run typecheck` (root script: `tsc -b`).
+- Tests: `bun run test` (Vitest) from the repo root runs all package tests. Each task's verification also runs `bun run typecheck` (root script: `tsc -b`).
 
 ## Review Focus
 
@@ -104,13 +104,13 @@ Domain errors (`packages/core/src/domain/errors.ts`): `class GameError extends E
 
 ### Task 1: Monorepo scaffold (eng-1)
 
-**Files:** Create root `package.json` (workspaces `apps/*`, `packages/*`; scripts `test: bun test`, `typecheck: tsc -b`), `tsconfig.base.json`, `tsconfig.json` (project references), `bunfig.toml`; `packages/{contracts,core,infra}/package.json` + `tsconfig.json` + `src/index.ts` (empty export); `packages/core/test/smoke.test.ts`. Update `.gitignore` (`node_modules`, `.next`, `.vercel`, `dist`, `spikes/photos/`).
+**Files:** Create root `package.json` (workspaces `apps/*`, `packages/*`; scripts `test: vitest run`, `typecheck: tsc -b`), `tsconfig.base.json`, `tsconfig.json` (project references), `bunfig.toml`; `packages/{contracts,core,infra}/package.json` + `tsconfig.json` + `src/index.ts` (empty export); `packages/core/test/smoke.test.ts`. Update `.gitignore` (`node_modules`, `.next`, `.vercel`, `dist`, `spikes/photos/`).
 
 **Interfaces:** Produces workspace package names `@snaphunt/contracts`, `@snaphunt/core`, `@snaphunt/infra`, `@snaphunt/api`, `@snaphunt/web`.
 
 - [ ] Step 1: Write `packages/core/test/smoke.test.ts`: `expect(await import('@snaphunt/core')).toBeDefined()`.
 - [ ] Step 2: Create workspace files; `bun install`; add `typescript` (dev) at root.
-- [ ] Step 3: Run `bun test` → PASS; `bun run typecheck` → exit 0.
+- [ ] Step 3: Run `bun run test` → PASS; `bun run typecheck` → exit 0.
 - [ ] Step 4: Commit, push, open PR `chore: scaffold bun monorepo`.
 
 ### Task 2: Vision spike (eng-2, throwaway, parallel with Tasks 3–7)

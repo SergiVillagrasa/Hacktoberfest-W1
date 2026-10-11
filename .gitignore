@@ -14,6 +14,8 @@ dist/
 build/
 .next/
 .turbo/
+.vercel/
+*.tsbuildinfo
 
 # OS files
 .DS_Store
