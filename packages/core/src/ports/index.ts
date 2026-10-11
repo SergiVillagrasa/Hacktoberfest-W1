@@ -33,3 +33,4 @@ export interface SubmissionRepository {
 }
 export * from './image-store';
 export * from './vision';
+export * from './media';

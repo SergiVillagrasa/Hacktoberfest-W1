@@ -12,7 +12,7 @@ Success tonight: a real outdoor round with friends that runs start to finish wit
 
 ### Goals
 - The complete rule set below, including visual-clue races, eliminations, and solo-hunt mode.
-- Friendly, playful feel inspired by Kahoot and Duolingo, with an illustrated mascot host.
+- Friendly, playful feel inspired by Kahoot and Duolingo, with an illustrated pug mascot host.
 - Fair, server-authoritative game state that survives refreshes and flaky outdoor connections.
 
 ### Non-goals (this build)
@@ -104,7 +104,7 @@ points    = round(base × (second clue used ? 0.75 : 1))
 ### 5.1 Roles
 - **Qwen3.8-27B** (primary, via Nebius, orchestrated with Mastra; Gemma 4 31B IT is the configurable fallback): target validation, clue writing (first and second clue, plus a short visual-race voice clue), and exact-object verification with structured evidence. Every call retries with backoff and is idempotent.
 - **ElevenLabs**: one game-show host voice for clues and announcements (finds, eliminations, solo-hunt switch, winner).
-- **Fal** (`fal-ai/nano-banana-2/edit` to start): turns a target's reference photo into a stylized illustration of the object that keeps its silhouette and distinctive features but removes surroundings, text, and location cues.
+- **Fal** (`fal-ai/nano-banana-2/edit`): the visual hint is an illustration of the host mascot, a pug, doing a playful action with a simplified cartoon version of the target object (hugging, peeking and pointing, detective with magnifying glass, balancing it on its head, sniffing it). The target photo and one canonical pug image are passed as references so the pug stays consistent; the object keeps its silhouette and distinctive non-text features, and surroundings, text, and location cues are removed. The action is picked at random.
 
 ### 5.2 Preparation ahead of play (builder call)
 When a target is accepted in the lobby, the backend prepares in the background:
@@ -128,7 +128,7 @@ The vision model sits behind a core port, so the provider can be swapped by conf
 
 Style: bright, rounded, bouncy, encouraging; big tap targets usable outdoors in sunlight; short text. Frontend design work goes through Impeccable.
 
-Mascot host: a 2D illustrated character with state-based animation. States at least: idle, talking (while audio plays), thinking (verifying), celebrating (find), sad/encouraging (failed attempt), shocked (elimination), countdown, trophy (winner). The art set is created once during the build and committed as static assets **(builder call; generating the pose set with Fal and animating with CSS is acceptable)**.
+Mascot host: a pug, a 2D illustrated character with state-based animation. States at least: idle, talking (while audio plays), thinking (verifying), celebrating (find), sad/encouraging (failed attempt), shocked (elimination), countdown, trophy (winner). The art set is created once during the build and committed as static assets **(builder call; generating the pose set with Fal and animating with CSS is acceptable)**.
 
 Screens:
 1. **Home**: create room or join with code.
@@ -172,6 +172,6 @@ Follows `docs/architecture.md` (bun monorepo, `apps/web` Next.js + HeroUI v3, `a
 ## 8. Left to the Builder
 - Exact Gemma prompts, evidence schema, and acceptance threshold (informed by the spike).
 - Voice choice within "game-show host", and announcement wording.
-- Mascot name and visual design (through Impeccable).
+- Mascot name (the pug's look is fixed by the canonical image `packages/infra/assets/pug-mascot.webp`; its UI poses are designed through Impeccable).
 - Table and column details, API routes, event payloads.
 - Breaking the work into small stacked PRs per `pr-sca`.

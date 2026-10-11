@@ -20,6 +20,8 @@
     "vitest": "5.0.3"
   },
   "dependencies": {
+    "@elevenlabs/elevenlabs-js": "2.70.0",
+    "@fal-ai/client": "1.10.1",
     "@mastra/core": "1.74.0",
     "@supabase/supabase-js": "2.117.2",
     "drizzle-orm": "0.45.3",
