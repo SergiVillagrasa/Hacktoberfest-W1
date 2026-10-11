@@ -5,6 +5,6 @@
     "rootDir": ".",
     "types": ["bun"]
   },
-  "include": ["src/**/*", "test/**/*", "drizzle.config.ts"],
+  "include": ["src/**/*", "test/**/*", "scripts/**/*", "drizzle.config.ts"],
   "references": [{ "path": "../core" }]
 }

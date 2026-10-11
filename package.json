@@ -10,7 +10,7 @@
     "test": "vitest run",
     "typecheck": "tsc -b",
     "db:generate": "drizzle-kit generate --config packages/infra/drizzle.config.ts",
-    "db:migrate": "bun --env-file=.env x drizzle-kit migrate --config packages/infra/drizzle.config.ts"
+    "db:migrate": "bun --env-file=.env packages/infra/scripts/migrate.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8",
