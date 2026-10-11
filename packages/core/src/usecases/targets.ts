@@ -1,5 +1,6 @@
 import { MAX_PLAYERS } from '../domain/constants';
 import { GameError } from '../domain/errors';
+import { sniffImageType } from '../domain/image-type';
 import type { Game, IdGen, Target } from '../domain/types';
 import type { GameRepository, ImageStore, HintGenerator, SpeechSynth, VisionModel } from '../ports';
 import { storagePaths } from '../ports/image-store';
@@ -21,17 +22,17 @@ const HINT_URL_TTL_SECONDS = 600;
 const AUDIO_KINDS = ['first', 'second', 'visual', 'judgeBusy'] as const;
 
 const emptyAssets = (): Target['assets'] => ({ prep: 'pending', clues: null, audio: { first: null, second: null, visual: null, judgeBusy: null }, hintPath: null });
-const isJpeg = (bytes: Uint8Array) => bytes.length > 2 && bytes[0] === 0xff && bytes[1] === 0xd8;
 
 export async function submitTarget(deps: TargetDeps, input: { code: string; playerId: string; bytes: Uint8Array }): Promise<{ validation: 'pending' }> {
-  if (!isJpeg(input.bytes)) throw new GameError('invalid_state', 'Please send a JPEG photo');
+  const contentType = sniffImageType(input.bytes);
+  if (!contentType) throw new GameError('invalid_state', 'Please send a JPEG, PNG or WebP photo');
   const game = await deps.games.loadByCode(input.code);
   if (!game) throw new GameError('not_found', 'Room not found');
   if (game.status !== 'lobby') throw new GameError('invalid_state', 'The game already started');
   if (!game.players.some((p) => p.id === input.playerId)) throw new GameError('not_found', 'Player not found');
 
   const imagePath = storagePaths.target(game.roomId, deps.newId());
-  await deps.images.put(imagePath, input.bytes, 'image/jpeg');
+  await deps.images.put(imagePath, input.bytes, contentType);
   const newTargetId = deps.newId();
   let targetId = newTargetId;
   await mutateGame(deps.games, input.code, (g) => {

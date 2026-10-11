@@ -9,8 +9,9 @@ function setup(overrides: { vision?: Partial<VisionModel>; speak?: (text: string
   let n = 0;
   const games = createMemoryGameRepository();
   const files = new Map<string, Uint8Array>();
+  const contentTypes = new Map<string, string>();
   const images: ImageStore = {
-    put: async (path, bytes) => void files.set(path, bytes),
+    put: async (path, bytes, contentType) => void (files.set(path, bytes), contentTypes.set(path, contentType)),
     get: async (path) => files.get(path) ?? Promise.reject(new Error('missing')),
     signedUrl: async (path) => `https://signed/${path}`,
   };
@@ -34,7 +35,7 @@ function setup(overrides: { vision?: Partial<VisionModel>; speak?: (text: string
   const runBackground = async () => {
     while (tasks.length) await tasks.shift()!();
   };
-  return { games, files, deps, roomDeps, vision, tasks, runBackground };
+  return { games, files, contentTypes, deps, roomDeps, vision, tasks, runBackground };
 }
 
 async function lobby(s: ReturnType<typeof setup>) {
@@ -61,7 +62,7 @@ describe('submitTarget', () => {
     await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG });
     await s.runBackground();
     const first = await target(s, c, ann.playerId);
-    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 7]) });
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 0xff, 7]) });
     const second = await target(s, c, ann.playerId);
     expect((await s.games.loadByCode(c))!.targets).toHaveLength(1);
     expect(second).toMatchObject({ id: first.id, validation: 'pending', assets: { prep: 'pending', clues: null } });
@@ -72,7 +73,7 @@ describe('submitTarget', () => {
     const { ann, code: c } = await lobby(s);
     await Promise.all([
       submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG }),
-      submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 8]) }),
+      submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 0xff, 8]) }),
     ]);
     expect((await s.games.loadByCode(c))!.targets).toHaveLength(1);
   });
@@ -88,17 +89,30 @@ describe('submitTarget', () => {
       await put(path, bytes, type);
       await s.games.save({ ...(await s.games.loadByCode(c))!, status: 'countdown' }, []);
     };
-    expect(await code(submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 9]) }))).toBe('invalid_state');
+    expect(await code(submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 0xff, 9]) }))).toBe('invalid_state');
     expect((await target(s, c, ann.playerId)).imagePath).toBe(live.imagePath);
     expect(s.files.get(live.imagePath)).toEqual(JPEG);
   });
 
-  test('rejects non-JPEG bytes and uploads after the game started', async () => {
+  test('rejects non-image bytes and uploads after the game started', async () => {
     const s = setup();
     const { ann, code: c } = await lobby(s);
-    expect(await code(submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([1, 2, 3]) }))).toBe('invalid_state');
+    const err = await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([1, 2, 3]) }).then(() => null, (e: GameError) => e);
+    expect(err).toMatchObject({ code: 'invalid_state', message: 'Please send a JPEG, PNG or WebP photo' });
     await s.games.save({ ...(await s.games.loadByCode(c))!, status: 'countdown' }, []);
     expect(await code(submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG }))).toBe('invalid_state');
+  });
+
+  test.each([
+    ['PNG', new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1]), 'image/png'],
+    ['WebP', new Uint8Array([0x52, 0x49, 0x46, 0x46, 1, 2, 3, 4, 0x57, 0x45, 0x42, 0x50, 9]), 'image/webp'],
+  ])('accepts a %s photo and stores it with its real content type', async (_name, bytes, contentType) => {
+    const s = setup();
+    const { ann, code: c } = await lobby(s);
+    expect(await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes })).toEqual({ validation: 'pending' });
+    const t = await target(s, c, ann.playerId);
+    expect(s.files.get(t.imagePath)).toEqual(bytes);
+    expect(s.contentTypes.get(t.imagePath)).toBe(contentType);
   });
 });
 
@@ -157,7 +171,7 @@ describe('prepareTarget', () => {
     const { ann, bob, code: c } = await lobby(s);
     await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG });
     await s.runBackground();
-    await submitTarget(s.deps, { code: c, playerId: bob.playerId, bytes: new Uint8Array([0xff, 0xd8, 5]) });
+    await submitTarget(s.deps, { code: c, playerId: bob.playerId, bytes: new Uint8Array([0xff, 0xd8, 0xff, 5]) });
     await s.runBackground();
     const calls = vi.mocked(s.vision.validateTarget).mock.calls;
     expect(calls[0]![1]).toHaveLength(0);
@@ -200,7 +214,7 @@ describe('preparation races', () => {
     await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG });
     const staleRun = s.tasks.shift()!();
     await vi.waitFor(() => expect(calls).toBe(1));
-    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 4]) });
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 0xff, 4]) });
     gate.resolve();
     await staleRun;
     const mid = await target(s, c, ann.playerId);
@@ -225,7 +239,7 @@ describe('preparation races', () => {
     });
     const { ann, bob, code: c } = await lobby(s);
     await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG });
-    await submitTarget(s.deps, { code: c, playerId: bob.playerId, bytes: new Uint8Array([0xff, 0xd8, 6]) });
+    await submitTarget(s.deps, { code: c, playerId: bob.playerId, bytes: new Uint8Array([0xff, 0xd8, 0xff, 6]) });
     await Promise.all(s.tasks.splice(0).map((task) => task()));
     const verdicts = (await s.games.loadByCode(c))!.targets.map((t) => t.validation).sort();
     expect(verdicts).toEqual(['accepted', 'rejected']);
@@ -248,7 +262,7 @@ describe('preparation races', () => {
       return others.length === 0 ? { accepted: true, reason: null, label: 'x' } : { accepted: false, reason: 'dup', label: 'x' };
     });
     state.armed = true;
-    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 2]) });
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 0xff, 2]) });
     await s.runBackground();
     expect(state.calls).toBe(2);
     expect(await target(s, c, ann.playerId)).toMatchObject({ validation: 'accepted', assets: { prep: 'ready' } });
@@ -265,8 +279,8 @@ describe('preparation races', () => {
       await s.games.save({ ...g, targets: g.targets.map((t) => (t.ownerId === bob.playerId ? { ...t, imagePath: `moving/${++n}.jpg` } : t)) }, []);
       return { accepted: true, reason: null, label: 'x' };
     });
-    s.deps.images.get = async () => new Uint8Array([0xff, 0xd8, 1]);
-    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 2]) });
+    s.deps.images.get = async () => new Uint8Array([0xff, 0xd8, 0xff, 1]);
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 0xff, 2]) });
     await s.runBackground();
     expect(await target(s, c, ann.playerId)).toMatchObject({ validation: 'rejected', rejectReason: JUDGE_DOWN_MESSAGE, assets: { prep: 'failed' } });
   });

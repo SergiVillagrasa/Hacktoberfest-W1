@@ -4,6 +4,7 @@ import { createApp } from '../src/app';
 import { makeDeps } from './fakes';
 
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2]);
 let ctx: ReturnType<typeof makeDeps>;
 let app: ReturnType<typeof createApp>;
 
@@ -29,6 +30,16 @@ describe('PUT /rooms/:code/target', () => {
     expect(game.targets[0]).toMatchObject({ ownerId: ann.playerId, validation: 'accepted', assets: { prep: 'ready' } });
   });
 
+  test('accepts a PNG upload labelled image/png', async () => {
+    const ann = await create();
+    const res = await upload(ann.roomCode, ann.token, PNG, 'image/png');
+    expect(res.status).toBe(202);
+    expect(res.body).toEqual({ validation: 'pending' });
+    await ctx.runBackground();
+    const game = (await ctx.deps.games.loadByCode(ann.roomCode))!;
+    expect(game.targets[0]).toMatchObject({ ownerId: ann.playerId, validation: 'accepted', assets: { prep: 'ready' } });
+  });
+
   test('requires a session of this room', async () => {
     const a = await create('Ann');
     const b = await create('Bea');
@@ -36,12 +47,12 @@ describe('PUT /rooms/:code/target', () => {
     expect((await upload(a.roomCode, b.token)).status).toBe(403);
   });
 
-  test('wrong content type is 415 and non-JPEG bytes are rejected', async () => {
+  test('wrong content type is 415 and non-image bytes are rejected', async () => {
     const ann = await create();
     expect((await upload(ann.roomCode, ann.token, 'hello', 'text/plain')).status).toBe(415);
     const res = await upload(ann.roomCode, ann.token, Buffer.from([1, 2, 3, 4]));
     expect(res.status).toBe(409);
-    expect(res.body.message).toContain('JPEG');
+    expect(res.body.message).toContain('JPEG, PNG or WebP');
   });
 
   test('photos over 4 MB are 413', async () => {

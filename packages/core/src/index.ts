@@ -8,6 +8,7 @@ export * from './domain/scoring';
 export * from './domain/ranking';
 export * from './domain/races';
 export * from './domain/game';
+export * from './domain/image-type';
 export * from './ports';
 export * from './usecases/rooms';
 export * from './testing/memory-game-repository';

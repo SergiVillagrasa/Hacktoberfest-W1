@@ -50,10 +50,10 @@ export function createApi({ baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http:/
     getRoom: (code: string, token: string) => request(RoomView, room(code), { token }),
     startGame: (code: string, token: string) => request(RoomView, `${room(code)}/start`, { method: 'POST', token }),
     removePlayer: (code: string, token: string, playerId: string) => request(EmptyResponse, `${room(code)}/players/${encodeURIComponent(playerId)}`, { method: 'DELETE', token }),
-    uploadTarget: (code: string, token: string, photo: Blob) => request(TargetResponse, `${room(code)}/target`, { method: 'PUT', token, headers: { 'content-type': 'image/jpeg' }, body: photo }),
+    uploadTarget: (code: string, token: string, photo: Blob) => request(TargetResponse, `${room(code)}/target`, { method: 'PUT', token, headers: { 'content-type': photo.type || 'image/jpeg' }, body: photo }),
     requestSecondClue: (code: string, token: string, clueId: string) => request(RoomView, `${room(code)}/clues/${encodeURIComponent(clueId)}/second`, { method: 'POST', token }),
     submitFind: (code: string, token: string, clueId: string, photo: Blob, idempotencyKey: string) =>
-      request(SubmitResult, `${room(code)}/clues/${encodeURIComponent(clueId)}/submissions`, { method: 'POST', token, headers: { 'content-type': 'image/jpeg', 'idempotency-key': idempotencyKey }, body: photo }),
+      request(SubmitResult, `${room(code)}/clues/${encodeURIComponent(clueId)}/submissions`, { method: 'POST', token, headers: { 'content-type': photo.type || 'image/jpeg', 'idempotency-key': idempotencyKey }, body: photo }),
     eventsUrl: (code: string, token: string) => `${baseUrl}${room(code)}/events?token=${encodeURIComponent(token)}`,
   };
 }

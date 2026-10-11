@@ -7,6 +7,7 @@ import { makeDeps } from './fakes';
 
 const T0 = new Date('2026-10-11T10:00:00Z');
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 1, 2]);
+const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2]);
 let clock: Date;
 let ctx: ReturnType<typeof makeDeps>;
 let app: ReturnType<typeof createApp>;
@@ -25,7 +26,7 @@ async function startedRoom() {
   const game = (await ctx.deps.games.loadByCode(ann.roomCode))!;
   const assets = { prep: 'ready' as const, clues: { first: 'f', second: 's', visual: 'v', judgeBusy: 'j' }, audio: { first: null, second: null, visual: null, judgeBusy: null }, hintPath: null };
   const targets: Target[] = [ann, bob].map((s, i) => ({ id: `t${i}`, ownerId: s.playerId, imagePath: `p${i}.jpg`, validation: 'accepted', rejectReason: null, foundBy: null, foundAt: null, points: null, assets }));
-  for (const t of targets) ctx.files.set(t.imagePath, new Uint8Array([0xff, 0xd8, 9]));
+  for (const t of targets) ctx.files.set(t.imagePath, new Uint8Array([0xff, 0xd8, 0xff, 9]));
   await ctx.deps.games.save({ ...game, targets }, []);
   await request(app).post(`/rooms/${ann.roomCode}/start`).set(auth(ann));
   clock = new Date(T0.getTime());
@@ -49,6 +50,13 @@ describe('POST /rooms/:code/clues/:clueId/submissions', () => {
     expect(SubmitResult.safeParse(res.body).success).toBe(true);
     expect(res.body).toMatchObject({ outcome: 'match', attemptsLeft: 5 });
     expect(res.body.points).toBeGreaterThan(0);
+  });
+
+  test('a matching PNG photo labelled image/png returns match', async () => {
+    const { bob, code, clueOf } = await startedRoom();
+    const res = await submit(code, await clueOf(bob), bob, { body: PNG, type: 'image/png' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ outcome: 'match', attemptsLeft: 5 });
   });
 
   test('retrying with the same Idempotency-Key returns the same result', async () => {

@@ -1,5 +1,5 @@
 import { Agent } from '@mastra/core/agent';
-import { JUDGE_BUDGET_MS, type ClueSet, type MatchEvidence, type TargetValidation, type VisionModel } from '@snaphunt/core';
+import { JUDGE_BUDGET_MS, sniffImageType, type ClueSet, type MatchEvidence, type TargetValidation, type VisionModel } from '@snaphunt/core';
 import { z } from 'zod';
 import { CLUES_PROMPT, COMPARE_PROMPT, VALIDATE_PROMPT } from './prompts';
 import { withRetry } from './retry';
@@ -25,7 +25,7 @@ export interface MastraVisionOptions {
   generateDeadlineMs?: number;
 }
 
-const dataUrl = (bytes: Uint8Array) => `data:image/jpeg;base64,${Buffer.from(bytes).toString('base64')}`;
+const dataUrl = (bytes: Uint8Array) => `data:${sniffImageType(bytes) ?? 'image/jpeg'};base64,${Buffer.from(bytes).toString('base64')}`;
 
 export function createMastraVision({ modelId, apiKey, compareDeadlineMs = JUDGE_BUDGET_MS, generateDeadlineMs = 30_000 }: MastraVisionOptions): VisionModel {
   async function ask<S extends z.ZodType>(instructions: string, schema: S, images: Uint8Array[], text: string, deadlineMs: number, signal: AbortSignal): Promise<z.infer<S>> {

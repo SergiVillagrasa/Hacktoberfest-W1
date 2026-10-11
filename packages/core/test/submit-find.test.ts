@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from 'vitest';
 import { createMemoryGameRepository, createMemorySubmissionRepository, seededRng, submitFind, type FindDeps, type Game, type GameError, type ImageStore, type MatchEvidence } from '../src';
 import { T0, makeClue, makeGame, makePlayer, makeTarget } from './fixtures';
 
-const JPEG = new Uint8Array([0xff, 0xd8, 1]);
+const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 1]);
 const evidence = (sameObject: boolean, confidence = 0.95): MatchEvidence => ({ sameObject, confidence, matchingFeatures: [], differences: [] });
 const code = async (p: Promise<unknown>) => ((await p.then(() => null, (e: GameError) => e))?.code ?? null);
 
@@ -26,7 +26,7 @@ async function setup(opts: { compare?: FindDeps['vision']['compare']; game?: Par
     ...opts.game,
   });
   await games.create(game, {});
-  const submit = (playerId: string, clueId: string, key = crypto.randomUUID()) => submitFind(deps, { code: 'ABCDE', playerId, clueId, bytes: JPEG, idempotencyKey: key });
+  const submit = (playerId: string, clueId: string, key = crypto.randomUUID(), bytes = JPEG) => submitFind(deps, { code: 'ABCDE', playerId, clueId, bytes, idempotencyKey: key });
   return { deps, games, submissions, files, compare, submit };
 }
 
@@ -39,6 +39,16 @@ describe('submitFind', () => {
     expect(game.targets.find((t) => t.id === 'tb')).toMatchObject({ foundBy: 'a', points: 900 });
     expect(s.submissions.all).toMatchObject([{ outcome: 'match', points: 900, playerId: 'a' }]);
     expect([...s.files.keys()].some((p) => p.includes('/submissions/'))).toBe(true);
+  });
+
+  test('non-image bytes are rejected before storing anything or calling the judge', async () => {
+    const s = await setup();
+    const err = await s.submit('a', 'ca', crypto.randomUUID(), new Uint8Array([1, 2, 3])).then(() => null, (e: GameError) => e);
+    expect(err).toMatchObject({ code: 'invalid_state', message: 'Please send a JPEG, PNG or WebP photo' });
+    expect([...s.files.keys()].some((p) => p.includes('/submissions/'))).toBe(false);
+    expect(s.compare).not.toHaveBeenCalled();
+    expect(s.submissions.all).toHaveLength(0);
+    expect((await s.games.loadByCode('ABCDE'))!.players[0]!.failedAttempts).toBe(0);
   });
 
   test('a low-confidence or different object counts as one failed attempt', async () => {
