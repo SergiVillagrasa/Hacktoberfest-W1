@@ -3,6 +3,7 @@ import type { DomainEvent, Game } from '../domain/types';
 import type { GameRepository, StoredEvent } from '../ports';
 
 export function createMemoryGameRepository(): GameRepository & { events: StoredEvent[] } {
+  const roomOf = new Map<number, string>();
   const games = new Map<string, Game>();
   const tokens = new Map<string, { roomCode: string; playerId: string }>();
   const events: StoredEvent[] = [];
@@ -14,8 +15,10 @@ export function createMemoryGameRepository(): GameRepository & { events: StoredE
   return {
     events,
     async create(game, tokenHashes) {
+      if (games.has(game.code)) return false;
       games.set(game.code, structuredClone(game));
       indexTokens(game, tokenHashes);
+      return true;
     },
     async loadByCode(code) {
       const game = games.get(code);
@@ -30,14 +33,17 @@ export function createMemoryGameRepository(): GameRepository & { events: StoredE
       const next = { ...structuredClone(game), version: game.version + 1 };
       games.set(game.code, next);
       indexTokens(next, tokenHashes);
-      for (const e of evs) events.push({ ...e, id: events.length + 1 });
+      for (const e of evs) {
+        events.push({ ...e, id: events.length + 1 });
+        roomOf.set(events.length, game.roomId);
+      }
       return structuredClone(next);
     },
     async version(code) {
       return games.get(code)?.version ?? null;
     },
-    async recentEvents(_roomId, limit) {
-      return events.slice(-limit);
+    async recentEvents(roomId, limit) {
+      return events.filter((e) => roomOf.get(e.id) === roomId).slice(-limit);
     },
   };
 }

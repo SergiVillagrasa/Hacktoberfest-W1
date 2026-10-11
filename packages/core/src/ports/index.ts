@@ -18,7 +18,8 @@ export interface StoredSubmission {
 export type StoredEvent = DomainEvent & { id: number };
 
 export interface GameRepository {
-  create(game: Game, tokenHashes: Record<string, string>): Promise<void>;
+  /** Inserts a new room. Resolves false, writing nothing, if the room code is already taken. */
+  create(game: Game, tokenHashes: Record<string, string>): Promise<boolean>;
   loadByCode(code: string): Promise<Game | null>;
   findPlayerByTokenHash(hash: string): Promise<{ roomCode: string; playerId: string } | null>;
   /** Persists game if stored version === game.version, then increments version; appends events. Throws GameError('version_conflict'). */

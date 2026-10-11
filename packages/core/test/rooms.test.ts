@@ -26,6 +26,27 @@ describe('rooms', () => {
     expect(await games.findPlayerByTokenHash(`hash:${s.token}`)).toEqual({ roomCode: s.roomCode, playerId: s.playerId });
   });
 
+  test('createRoom retries when the generated code is already taken', async () => {
+    const { games, deps } = setup();
+    const first = await createRoom(deps, { nickname: 'Ann', timeLimitMinutes: 10 });
+    const second = await createRoom({ ...deps, rng: seededRng(5) }, { nickname: 'Bob', timeLimitMinutes: 10 });
+    expect(second.roomCode).not.toBe(first.roomCode);
+    expect((await games.loadByCode(first.roomCode))!.players[0]!.nickname).toBe('Ann');
+    expect((await games.loadByCode(second.roomCode))!.players[0]!.nickname).toBe('Bob');
+  });
+
+  test('in-memory recentEvents only returns the requested room', async () => {
+    const { games, deps } = setup();
+    const a = await createRoom(deps, { nickname: 'Ann', timeLimitMinutes: 10 });
+    const b = await createRoom(deps, { nickname: 'Bob', timeLimitMinutes: 10 });
+    const [ga, gb] = [(await games.loadByCode(a.roomCode))!, (await games.loadByCode(b.roomCode))!];
+    const at = new Date();
+    await games.save(ga, [{ type: 'solo_mode', at }]);
+    await games.save(gb, [{ type: 'game_started', at }]);
+    expect(await games.recentEvents(ga.roomId, 10)).toMatchObject([{ type: 'solo_mode' }]);
+    expect(await games.recentEvents(gb.roomId, 10)).toMatchObject([{ type: 'game_started' }]);
+  });
+
   test('createRoom rejects an unsupported time limit', async () => {
     expect(await code(createRoom(setup().deps, { nickname: 'Ann', timeLimitMinutes: 12 }))).toBe('invalid_state');
   });

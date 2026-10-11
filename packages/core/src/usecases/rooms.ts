@@ -20,6 +20,7 @@ export interface Session {
 }
 
 const MAX_CONFLICT_RETRIES = 3;
+const MAX_CODE_ATTEMPTS = 10;
 
 export async function updateGame<T>(games: GameRepository, code: string, change: (game: Game) => Promise<T> | T, save: (game: Game, result: T) => Promise<Game>): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -46,18 +47,24 @@ const newPlayer = (deps: RoomDeps, nickname: string, isCreator: boolean): Player
 
 export async function createRoom(deps: RoomDeps, input: { nickname: string; timeLimitMinutes: number }): Promise<Session> {
   if (!(TIME_LIMIT_MINUTES as readonly number[]).includes(input.timeLimitMinutes)) throw new GameError('invalid_state', 'Unsupported time limit');
-  let code = generateRoomCode(deps.rng);
-  for (let i = 0; i < 10 && (await deps.games.loadByCode(code)); i++) code = generateRoomCode(deps.rng);
-  if (await deps.games.loadByCode(code)) throw new GameError('invalid_state', 'Could not allocate a room code');
-
   const creator = newPlayer(deps, input.nickname, true);
   const token = deps.newToken();
-  const game: Game = {
-    roomId: deps.newId(),
+  const roomId = deps.newId();
+  for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
+    const code = generateRoomCode(deps.rng);
+    const game: Game = newLobby(roomId, code, input.timeLimitMinutes, creator);
+    if (await deps.games.create(game, { [creator.id]: deps.hashToken(token) })) return { roomCode: code, playerId: creator.id, token };
+  }
+  throw new GameError('invalid_state', 'Could not allocate a room code');
+}
+
+function newLobby(roomId: string, code: string, timeLimitMinutes: number, creator: Player): Game {
+  return {
+    roomId,
     code,
     status: 'lobby',
     phase: 'races',
-    timeLimitMs: input.timeLimitMinutes * 60_000,
+    timeLimitMs: timeLimitMinutes * 60_000,
     countdownEndsAt: null,
     endsAt: null,
     finishedAt: null,
@@ -66,8 +73,6 @@ export async function createRoom(deps: RoomDeps, input: { nickname: string; time
     clues: [],
     version: 0,
   };
-  await deps.games.create(game, { [creator.id]: deps.hashToken(token) });
-  return { roomCode: code, playerId: creator.id, token };
 }
 
 export async function joinRoom(deps: RoomDeps, input: { code: string; nickname: string }): Promise<Session> {
