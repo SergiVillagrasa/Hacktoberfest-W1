@@ -24,3 +24,20 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run typecheck
       - run: bun run test
+
+  report-main-failure:
+    needs: verify
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          SUBJECT: ${{ github.event.head_commit.message }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "main is failing after ${GITHUB_SHA::7}" \
+            --body "CI failed on main after the merge: ${SUBJECT%%$'\n'*}
+
+          Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
