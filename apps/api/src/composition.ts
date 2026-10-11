@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { createDb, createElevenLabsSpeech, createFalHints, createGameRepository, createMastraVision, createSupabaseImageStore, loadPugMascot } from '@snaphunt/infra';
+import { createDb, createElevenLabsSpeech, createFalHints, createGameRepository, createMastraVision, createSubmissionRepository, createSupabaseImageStore, loadPugMascot } from '@snaphunt/infra';
 import type { AppDeps } from './app';
 import type { Env } from './env';
 
@@ -9,8 +9,10 @@ const logAndForget: Background = (task) => void task().catch((error) => console.
 
 export async function compose(env: Env, background: Background = logAndForget): Promise<AppDeps> {
   const apiKey = (env.VISION_MODEL.startsWith('google/') ? env.GOOGLE_AI_API_KEY : env.NEBIUS_API_KEY)!;
+  const db = createDb(env.DATABASE_URL);
   return {
-    games: createGameRepository(createDb(env.DATABASE_URL)),
+    games: createGameRepository(db),
+    submissions: createSubmissionRepository(db),
     images: createSupabaseImageStore(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY),
     vision: createMastraVision({ modelId: env.VISION_MODEL, apiKey }),
     speech: createElevenLabsSpeech(env.ELEVENLABS_API_KEY),
