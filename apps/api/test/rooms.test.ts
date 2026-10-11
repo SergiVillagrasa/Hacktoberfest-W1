@@ -1,15 +1,16 @@
-import { createMemoryGameRepository, seededRng } from '@snaphunt/core';
+import type { createMemoryGameRepository } from '@snaphunt/core';
 import request from 'supertest';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { createApp } from '../src/app';
+import { makeDeps } from './fakes';
 
 let games: ReturnType<typeof createMemoryGameRepository>;
 let app: ReturnType<typeof createApp>;
 
 beforeEach(() => {
-  let n = 0;
-  games = createMemoryGameRepository();
-  app = createApp({ games, now: () => new Date('2026-10-11T10:00:00Z'), rng: seededRng(9), newId: () => `id${++n}`, webOrigin: 'http://localhost:3000' });
+  const { deps } = makeDeps();
+  games = deps.games as typeof games;
+  app = createApp(deps);
 });
 
 const create = async (nickname = 'Ann') => (await request(app).post('/rooms').send({ nickname, timeLimitMinutes: 10 })).body as { roomCode: string; playerId: string; token: string };
