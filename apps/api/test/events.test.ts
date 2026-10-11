@@ -81,4 +81,15 @@ describe('GET /rooms/:code/events', () => {
     expect((await request(app).get(`/rooms/${code}/events`)).status).toBe(401);
     expect((await request(app).get(`/rooms/${code}/events`).query({ token: 'nope' })).status).toBe(401);
   });
+
+  test('unexpected failures are streamed as a generic error without internal details', async () => {
+    const { bob, code } = await room();
+    ctx.deps.images.signedUrl = async () => {
+      throw new Error('connection to db.internal.example:5432 refused');
+    };
+    const res = await stream(code, bob.token);
+    expect(res.body).toContain('event: error');
+    expect(res.body).toContain('Something went wrong');
+    expect(res.body).not.toContain('internal.example');
+  });
 });

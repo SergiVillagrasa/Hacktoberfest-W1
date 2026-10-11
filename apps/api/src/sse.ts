@@ -1,4 +1,4 @@
-import { getView, tick, type Game, type StartDeps, type ViewDeps } from '@snaphunt/core';
+import { GameError, getView, tick, type Game, type StartDeps, type ViewDeps } from '@snaphunt/core';
 import type { Request, Response } from 'express';
 
 export interface SseOptions {
@@ -42,8 +42,9 @@ export async function streamRoom(deps: StartDeps & ViewDeps, req: Request, res: 
       await sleep(pollMs);
     }
   } catch (error) {
-    const gameError = error as { code?: string; message?: string };
-    if (open) res.write(`event: error\ndata: ${JSON.stringify({ code: gameError.code ?? 'invalid_state', message: gameError.message ?? 'Stream failed' })}\n\n`);
+    if (!(error instanceof GameError)) console.error(error);
+    const body = error instanceof GameError ? { code: error.code, message: error.message } : { code: 'invalid_state', message: 'Something went wrong' };
+    if (open) res.write(`event: error\ndata: ${JSON.stringify(body)}\n\n`);
   }
   res.end();
 }
