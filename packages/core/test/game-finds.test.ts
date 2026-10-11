@@ -89,6 +89,18 @@ describe('applyVerifiedFind', () => {
     expect(end.events.at(-1)).toMatchObject({ type: 'game_finished', reason: 'all_found' });
   });
 
+  test('final find in races phase finishes without entering solo', () => {
+    const g = makeGame({
+      players: players(2),
+      targets: [makeTarget('ta', 'a', { foundBy: 'b', foundAt: at(30), points: 500 }), makeTarget('tb', 'b')],
+      clues: [makeClue('ca', 'tb', 'a'), makeClue('cb', 'ta', 'b', { status: 'won' })],
+    });
+    const { game, events } = find(g, 'ca');
+    expect(game.status).toBe('finished');
+    expect(game.phase).toBe('races');
+    expect(events.map((e) => e.type)).toEqual(['target_found', 'game_finished']);
+  });
+
   test('solo phase issues no visual clues and eliminates nobody', () => {
     let g = ring3();
     for (const id of ['c', 'b']) for (let i = 0; i < 5; i++) g = applyFailedAttempt(g, id, at(10 + i)).game;
@@ -100,6 +112,18 @@ describe('applyVerifiedFind', () => {
 });
 
 describe('applyFailedAttempt', () => {
+  test('last pursuer running out in races phase finishes without entering solo', () => {
+    const g = makeGame({
+      players: [makePlayer('a', { status: 'out_of_attempts', failedAttempts: 5 }), makePlayer('b', { failedAttempts: 4 })],
+      targets: targets(2),
+      clues: [makeClue('ca', 'tb', 'a', { status: 'cancelled' }), makeClue('cb', 'ta', 'b')],
+    });
+    const { game, events } = applyFailedAttempt(g, 'b', at(5));
+    expect(game.status).toBe('finished');
+    expect(game.phase).toBe('races');
+    expect(events.map((e) => e.type)).toEqual(['player_out_of_attempts', 'game_finished']);
+  });
+
   test('fifth failure removes the player and cancels their clues; sixth is rejected', () => {
     let g = ring3();
     for (let i = 0; i < 4; i++) g = applyFailedAttempt(g, 'a', at(i)).game;

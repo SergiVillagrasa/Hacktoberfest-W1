@@ -78,13 +78,10 @@ export function checkEnd(game: Game, at: Date): Transition {
 }
 
 function settle(game: Game, at: Date, events: DomainEvent[]): Transition {
-  let next = game;
-  if (shouldEnterSolo(next)) {
-    next = { ...next, phase: 'solo' };
-    events.push({ type: 'solo_mode', at });
-  }
-  const end = checkEnd(next, at);
-  return { game: end.game, events: [...events, ...end.events] };
+  const end = checkEnd(game, at);
+  if (end.game.status === 'finished') return { game: end.game, events: [...events, ...end.events] };
+  if (!shouldEnterSolo(game)) return { game, events };
+  return { game: { ...game, phase: 'solo' }, events: [...events, { type: 'solo_mode', at }] };
 }
 
 export function applyVerifiedFind(game: Game, clueId: string, foundAt: Date, rng: Rng, newId: IdGen): Transition {
