@@ -177,3 +177,57 @@ describe('prepareTarget', () => {
     expect(await s.games.version(c)).toBe(version);
   });
 });
+
+describe('preparation races', () => {
+  const deferred = () => {
+    let resolve!: () => void;
+    const promise = new Promise<void>((r) => (resolve = r));
+    return { promise, resolve };
+  };
+
+  test('a stale preparation cannot overwrite a newer upload', async () => {
+    const gate = deferred();
+    let calls = 0;
+    const s = setup({
+      vision: {
+        validateTarget: vi.fn(async (): Promise<TargetValidation> => {
+          if (++calls === 1) await gate.promise;
+          return { accepted: true, reason: null, label: 'thing' };
+        }),
+      },
+    });
+    const { ann, code: c } = await lobby(s);
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG });
+    const staleRun = s.tasks.shift()!();
+    await vi.waitFor(() => expect(calls).toBe(1));
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: new Uint8Array([0xff, 0xd8, 4]) });
+    gate.resolve();
+    await staleRun;
+    const mid = await target(s, c, ann.playerId);
+    expect(mid).toMatchObject({ validation: 'pending', assets: { prep: 'pending', clues: null } });
+    await s.runBackground();
+    const done = await target(s, c, ann.playerId);
+    expect(done).toMatchObject({ validation: 'accepted', imagePath: mid.imagePath, assets: { prep: 'ready' } });
+    for (const path of Object.values(done.assets.audio)) expect(path).toContain(mid.imagePath.split('/').pop()!.replace('.jpg', ''));
+  });
+
+  test('two simultaneous duplicate uploads: only one is accepted', async () => {
+    const entered = deferred();
+    let inFlight = 0;
+    const s = setup({
+      vision: {
+        validateTarget: vi.fn(async (_image, others): Promise<TargetValidation> => {
+          if (++inFlight === 2) entered.resolve();
+          if (inFlight <= 2) await entered.promise;
+          return others.length === 0 ? { accepted: true, reason: null, label: 'cup' } : { accepted: false, reason: 'Already in the room', label: 'cup' };
+        }),
+      },
+    });
+    const { ann, bob, code: c } = await lobby(s);
+    await submitTarget(s.deps, { code: c, playerId: ann.playerId, bytes: JPEG });
+    await submitTarget(s.deps, { code: c, playerId: bob.playerId, bytes: new Uint8Array([0xff, 0xd8, 6]) });
+    await Promise.all(s.tasks.splice(0).map((task) => task()));
+    const verdicts = (await s.games.loadByCode(c))!.targets.map((t) => t.validation).sort();
+    expect(verdicts).toEqual(['accepted', 'rejected']);
+  });
+});

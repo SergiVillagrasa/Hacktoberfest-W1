@@ -1,3 +1,4 @@
+import { MAX_PLAYERS } from '../domain/constants';
 import { GameError } from '../domain/errors';
 import type { Game, IdGen, Target } from '../domain/types';
 import type { GameRepository, ImageStore, HintGenerator, SpeechSynth, VisionModel } from '../ports';
@@ -44,6 +45,8 @@ export async function submitTarget(deps: TargetDeps, input: { code: string; play
   return { validation: 'pending' };
 }
 
+const uploadKey = (imagePath: string) => imagePath.split('/').pop()!.replace(/\.jpg$/, '');
+
 export async function prepareTarget(deps: TargetDeps, input: { code: string; targetId: string }): Promise<void> {
   const { games, images, vision, speech, hints } = deps;
   const game = await games.loadByCode(input.code);
@@ -52,18 +55,41 @@ export async function prepareTarget(deps: TargetDeps, input: { code: string; tar
   const needsValidation = target.validation === 'pending';
   if (!needsValidation && !(target.validation === 'accepted' && target.assets.prep === 'pending')) return;
 
-  const update = (change: (t: Target) => Target) => mutateGame(games, input.code, (g): Game => ({ ...g, targets: g.targets.map((t) => (t.id === input.targetId ? change(t) : t)) }));
+  const key = uploadKey(target.imagePath);
+  const isCurrent = (t: Target | undefined): t is Target => t?.imagePath === target.imagePath;
+  const apply = (g: Game, change: (t: Target) => Target): Game => ({ ...g, targets: g.targets.map((t) => (t.id === input.targetId ? change(t) : t)) });
+  const update = async (change: (t: Target) => Target): Promise<boolean> => {
+    let applied = false;
+    await mutateGame(games, input.code, (g) => {
+      applied = isCurrent(g.targets.find((t) => t.id === input.targetId));
+      return applied ? apply(g, change) : g;
+    });
+    return applied;
+  };
   const judgeDown = () => update((t) => ({ ...t, validation: 'rejected', rejectReason: JUDGE_DOWN_MESSAGE, assets: { ...t.assets, prep: 'failed' } }));
+  const acceptedPaths = (g: Game) => g.targets.filter((t) => t.id !== target.id && t.validation === 'accepted').map((t) => t.imagePath).sort().join('|');
   const signal = AbortSignal.timeout(VISION_TIMEOUT_MS);
 
   let image: Uint8Array;
   try {
     image = await images.get(target.imagePath);
-    if (needsValidation) {
-      const others = await Promise.all(game.targets.filter((t) => t.id !== target.id && t.validation === 'accepted').map((t) => images.get(t.imagePath)));
+    for (let round = 0; needsValidation; round++) {
+      const fresh = await games.loadByCode(input.code);
+      if (!fresh || !isCurrent(fresh.targets.find((t) => t.id === target.id))) return;
+      const seen = acceptedPaths(fresh);
+      const others = await Promise.all(seen ? seen.split('|').map((path) => images.get(path)) : []);
       const verdict = await vision.validateTarget(image, others, signal);
-      await update((t) => ({ ...t, validation: verdict.accepted ? 'accepted' : 'rejected', rejectReason: verdict.accepted ? null : verdict.reason ?? 'That photo will not work, try another object' }));
+      const result: { outcome: 'stale' | 'changed' | 'applied' } = { outcome: 'applied' };
+      await mutateGame(games, input.code, (g) => {
+        if (!isCurrent(g.targets.find((t) => t.id === target.id))) return ((result.outcome = 'stale'), g);
+        if (verdict.accepted && acceptedPaths(g) !== seen) return ((result.outcome = 'changed'), g);
+        result.outcome = 'applied';
+        return apply(g, (t) => ({ ...t, validation: verdict.accepted ? 'accepted' : 'rejected', rejectReason: verdict.accepted ? null : verdict.reason ?? 'That photo will not work, try another object' }));
+      });
+      if (result.outcome === 'stale') return;
+      if (result.outcome === 'changed' && round < MAX_PLAYERS) continue;
       if (!verdict.accepted) return;
+      break;
     }
   } catch {
     await judgeDown();
@@ -79,13 +105,13 @@ export async function prepareTarget(deps: TargetDeps, input: { code: string; tar
       return;
     }
     const written = clues;
-    await update((t) => ({ ...t, assets: { ...t.assets, clues: written } }));
+    if (!(await update((t) => ({ ...t, assets: { ...t.assets, clues: written } })))) return;
   }
 
   const audio = { ...target.assets.audio };
   for (const kind of AUDIO_KINDS) {
     try {
-      const path = storagePaths.audio(game.roomId, target.id, kind);
+      const path = storagePaths.audio(game.roomId, key, kind);
       await images.put(path, await speech.speak(clues[kind]), 'audio/mpeg');
       audio[kind] = path;
     } catch {
@@ -95,7 +121,7 @@ export async function prepareTarget(deps: TargetDeps, input: { code: string; tar
 
   let hintPath: string | null = null;
   try {
-    const path = storagePaths.hint(game.roomId, target.id);
+    const path = storagePaths.hint(game.roomId, key);
     await images.put(path, await hints.stylize(await images.signedUrl(target.imagePath, HINT_URL_TTL_SECONDS)), 'image/webp');
     hintPath = path;
   } catch {
