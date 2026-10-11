@@ -2,7 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "types": ["bun"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "test/**/*"],
+  "references": [{ "path": "../../packages/contracts" }, { "path": "../../packages/core" }, { "path": "../../packages/infra" }]
 }
