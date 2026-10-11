@@ -90,3 +90,29 @@ describe('GET /rooms/:code', () => {
     expect(res.body.myClues[0]).toMatchObject({ text: 'f' });
   });
 });
+
+describe('POST /rooms/:code/clues/:clueId/second', () => {
+  test('reveals the second clue text and audio only after it is requested, once', async () => {
+    const { ann, bob, code } = await room();
+    await request(app).post(`/rooms/${code}/start`).set(auth(ann));
+    clock = new Date(T0.getTime() + 5000);
+    const before = (await request(app).get(`/rooms/${code}`).set(auth(bob))).body;
+    expect(before.myClues[0]).toMatchObject({ secondText: null, secondClueUsed: false });
+    const url = `/rooms/${code}/clues/${before.myClues[0].id}/second`;
+    const res = await request(app).post(url).set(auth(bob));
+    expect(res.status).toBe(200);
+    expect(res.body.myClues[0]).toMatchObject({ secondText: 's', secondClueUsed: true });
+    const again = await request(app).post(url).set(auth(bob));
+    expect(again.status).toBe(409);
+    expect(again.body.code).toBe('second_clue_used');
+  });
+
+  test('another player cannot use your clue and needs a session', async () => {
+    const { ann, bob, code } = await room();
+    await request(app).post(`/rooms/${code}/start`).set(auth(ann));
+    clock = new Date(T0.getTime() + 5000);
+    const mine = (await request(app).get(`/rooms/${code}`).set(auth(bob))).body.myClues[0].id;
+    expect((await request(app).post(`/rooms/${code}/clues/${mine}/second`).set(auth(ann))).status).toBe(403);
+    expect((await request(app).post(`/rooms/${code}/clues/${mine}/second`)).status).toBe(401);
+  });
+});

@@ -14,3 +14,4 @@ export * from './testing/memory-game-repository';
 export * from './usecases/targets';
 export * from './usecases/start-and-tick';
 export * from './usecases/get-view';
+export * from './usecases/second-clue';
