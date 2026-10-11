@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import Link from 'next/link';
+import { Mascot } from '@/components/mascot/Mascot';
 
 export default function HomePage() {
   return (
@@ -7,7 +7,7 @@ export default function HomePage() {
       <h1 className="text-center text-4xl leading-none tracking-tight text-leaf">SnapHunt</h1>
 
       <div className="flex flex-1 items-center justify-center">
-        <Image src="/mascot/idle.webp" alt="Your host: a friendly pug in a red bow tie" width={655} height={823} priority className="h-auto w-4/5 max-w-[19rem]" />
+        <Mascot state="idle" size="lg" />
       </div>
 
       <div className="flex flex-col gap-3">

@@ -174,7 +174,9 @@ Rounded and confident but never pill-shaped or bubbly: controls 0.875rem, cards 
 - **Focus:** Sky ring and Sky border. Error uses Bow.
 
 ### Mascot
-The pug host is a flat 2D illustration (`/mascot/idle.webp`) with its background cut out, standing on the white page with a neutral translucent ground shadow. It has no blush and no whiskers and wears a plain red bow tie. Its animation respects `prefers-reduced-motion`.
+The pug host is a flat 2D illustration with its background cut out, standing on the white page with a neutral translucent ground shadow. It has eight poses (`idle`, `talking`, `thinking`, `celebrating`, `sad`, `shocked`, `countdown`, `trophy`), no blush, no whiskers, and a plain red bow tie. Each pose has its own looping motion (bob, wiggle, sway, bounce, droop, shake, pulse) and a short pop-in when the pose changes; all of it stops under `prefers-reduced-motion`.
+
+What the host says appears in a white speech bubble above it (2px Line border, 4px Line Deep bottom edge, a small tail pointing at the pug). The bubble is a polite live region, so spoken lines are always readable as text.
 
 ## Do's and Don'ts
 

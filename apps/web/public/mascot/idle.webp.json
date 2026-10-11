@@ -1,0 +1,4 @@
+{
+  "prompt": "A cute 2D illustrated pug mascot character, simple flat 2D vector illustration with very minimal detail. Full body, sitting upright facing the viewer, friendly pose. Bold uniform dark outlines and solid flat colors only, no gradients, no shading, no texture. Fawn-colored body, dark brown muzzle and floppy dark ears, very big round dark eyes with a thick white ring around them, two small curved forehead wrinkles, a wide happy smile with a small pink tongue. A plain solid red bow tie with no pattern. No blush or pink cheeks, no whiskers, no freckles, no fur strokes, no extra props. Plain pastel lavender background, no text.\n\nModel: fal-ai/nano-banana-2 (text to image), 1K, 1:1, candidate A of three, chosen by the product owner on 2026-10-11 (packages/infra/assets/pug-mascot.webp). Post-processed with scripts/mascot-cutout.py (background cut out, ground shadow recoloured, trimmed).",
+  "createdAt": "2026-10-11T14:45:08.767Z"
+}
