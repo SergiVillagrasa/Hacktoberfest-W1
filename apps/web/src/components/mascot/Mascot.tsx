@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect } from 'react';
+import { withBase } from '@/lib/base-path';
 import { MASCOT_STATES, POSES, type MascotState } from './states';
 import './mascot.css';
 
@@ -15,7 +16,7 @@ interface MascotProps {
 
 export function Mascot({ state, line, size = 'md', className = '' }: MascotProps) {
   useEffect(() => {
-    for (const s of MASCOT_STATES) new window.Image().src = `/mascot/${s}.webp`;
+    for (const s of MASCOT_STATES) new window.Image().src = withBase(`/mascot/${s}.webp`);
   }, []);
 
   const pose = POSES[state];
@@ -25,7 +26,7 @@ export function Mascot({ state, line, size = 'md', className = '' }: MascotProps
         {line ? <p className="mascot-bubble">{line}</p> : null}
       </div>
       <div className="mascot-stage">
-        <Image key={state} src={`/mascot/${state}.webp`} alt={pose.alt} width={pose.width} height={pose.height} priority={state === 'idle'} className="mascot-art" data-state={state} />
+        <Image key={state} src={withBase(`/mascot/${state}.webp`)} alt={pose.alt} width={pose.width} height={pose.height} priority={state === 'idle'} className="mascot-art" data-state={state} />
       </div>
     </figure>
   );

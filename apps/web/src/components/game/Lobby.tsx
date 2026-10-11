@@ -6,6 +6,7 @@ import { CaptureButton } from '@/components/camera/CaptureButton';
 import { Mascot } from '@/components/mascot/Mascot';
 import type { MascotState } from '@/components/mascot/states';
 import { api, errorMessage } from '@/lib/client';
+import { BASE_PATH } from '@/lib/base-path';
 import { canStart, shareUrl, startHint } from '@/lib/lobby';
 
 interface LobbyProps {
@@ -70,7 +71,7 @@ export function Lobby({ code, token, view, refresh }: LobbyProps) {
   }
 
   async function share() {
-    const url = shareUrl(window.location.origin, code);
+    const url = shareUrl(window.location.origin, code, BASE_PATH);
     if (navigator.share) {
       try {
         await navigator.share({ title: 'SnapHunt', text: `Join my SnapHunt room ${code}`, url });

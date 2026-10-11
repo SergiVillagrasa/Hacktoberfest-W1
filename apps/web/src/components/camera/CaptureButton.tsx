@@ -12,7 +12,7 @@ interface CaptureButtonProps {
   className?: string;
 }
 
-/** A big button that opens the rear camera and hands back a resized JPEG. */
+/** A big button that opens the rear camera and hands back a resized photo (JPEG when the browser allows it). */
 export function CaptureButton({ children, onPhoto, onError, variant = 'primary', disabled, className = '' }: CaptureButtonProps) {
   const input = useRef<HTMLInputElement>(null);
 

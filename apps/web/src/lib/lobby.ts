@@ -13,6 +13,6 @@ export function startHint(view: Pick<RoomView, 'players'>): string {
   return "Everyone's ready. Start when you are!";
 }
 
-export function shareUrl(origin: string, code: string): string {
-  return `${origin}/join?code=${code}`;
+export function shareUrl(origin: string, code: string, basePath = ''): string {
+  return `${origin}${basePath}/join?code=${code}`;
 }

@@ -20,7 +20,7 @@ Build a TypeScript monorepo for a mobile-first multiplayer object-hunting game. 
 - Storage: Supabase Storage
 - Real-time updates: Server-Sent Events (SSE); each stream polls the room version about once per second, ends after 280 s and the client reconnects, because Vercel functions have a time limit and no shared memory
 - Auth: temporary guest player sessions; no account registration
-- Deployment: Vercel for both the web app and the API (two projects, `apps/web` and `apps/api`); the API is built into a single bundle at deploy time and runs with `maxDuration` 300
+- Deployment: Vercel for both the web app and the API (two projects, `apps/web` and `apps/api`); the web app is served under the base path `/projects/snaphunt` (`BASE_PATH` at build time) so it can live at `sergi-villagrasa.tech/projects/snaphunt` next to a future portfolio, and the API's `WEB_ORIGIN` is a comma-separated list of allowed web origins; the API is built into a single bundle at deploy time and runs with `maxDuration` 300
 
 ## Monorepo Layout
 

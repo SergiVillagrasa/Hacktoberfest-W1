@@ -16,7 +16,7 @@ export interface AppDeps extends TargetDeps, FindDeps {
 
 export function createApp(deps: AppDeps): Express {
   const app = express();
-  app.use(cors({ origin: deps.webOrigin }));
+  app.use(cors({ origin: deps.webOrigin.split(',').map((origin) => origin.trim()) }));
   app.get('/health', (_req, res) => void res.json({ ok: true }));
   app.use(targetRoutes(deps));
   app.use(clueRoutes(deps));

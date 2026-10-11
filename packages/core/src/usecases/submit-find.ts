@@ -2,6 +2,7 @@ import type { SubmitResult } from '@snaphunt/contracts';
 import { JUDGE_BUDGET_MS, MATCH_THRESHOLD, MAX_FAILED_ATTEMPTS } from '../domain/constants';
 import { GameError } from '../domain/errors';
 import { applyFailedAttempt, applyVerifiedFind } from '../domain/game';
+import { sniffImageType } from '../domain/image-type';
 import type { DomainEvent, Game, IdGen, Rng } from '../domain/types';
 import type { GameRepository, ImageStore, MatchEvidence, SubmissionRepository, VisionModel } from '../ports';
 import { storagePaths } from '../ports/image-store';
@@ -71,9 +72,11 @@ export async function submitFind(deps: FindDeps, input: { code: string; playerId
   const pre = precheck(game, input.playerId, input.clueId);
   if (pre.alreadyFound) return result('already_found', game, input.playerId);
 
+  const contentType = sniffImageType(input.bytes);
+  if (!contentType) throw new GameError('invalid_state', 'Please send a JPEG, PNG or WebP photo');
   const submissionId = deps.newId();
   const imagePath = storagePaths.submission(game.roomId, submissionId);
-  await images.put(imagePath, input.bytes, 'image/jpeg');
+  await images.put(imagePath, input.bytes, contentType);
   let evidence: MatchEvidence | null = null;
   try {
     const reference = await images.get(pre.target.imagePath);

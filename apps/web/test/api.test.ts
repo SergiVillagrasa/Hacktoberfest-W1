@@ -38,6 +38,20 @@ describe('api client', () => {
     expect(calls[1]!.url).toBe('https://api.test/rooms/ABCDE/clues/clue-1/submissions');
   });
 
+  test('uploads label the photo with its real type, falling back to image/jpeg', async () => {
+    const { api, calls } = setup((url) => (url.endsWith('/target') ? reply(202, { validation: 'pending' }) : reply(200, { outcome: 'no_match', attemptsLeft: 4, message: 'x' })));
+    const png = new Blob([new Uint8Array([0x89, 0x50])], { type: 'image/png' });
+    await api.uploadTarget('ABCDE', 'tok', png);
+    expect(header(calls[0]!.init, 'content-type')).toBe('image/png');
+    await api.submitFind('ABCDE', 'tok', 'clue-1', png, 'key-1');
+    expect(header(calls[1]!.init, 'content-type')).toBe('image/png');
+    const untyped = new Blob([new Uint8Array([0xff, 0xd8])]);
+    await api.uploadTarget('ABCDE', 'tok', untyped);
+    expect(header(calls[2]!.init, 'content-type')).toBe('image/jpeg');
+    await api.submitFind('ABCDE', 'tok', 'clue-1', untyped, 'key-2');
+    expect(header(calls[3]!.init, 'content-type')).toBe('image/jpeg');
+  });
+
   test('server errors become ApiError with the status, code and friendly message', async () => {
     const { api } = setup(() => reply(409, { code: 'room_full', message: 'This room is full' }));
     await expect(api.joinRoom('ABCDE', { nickname: 'Bob' })).rejects.toMatchObject({ name: 'ApiError', status: 409, code: 'room_full', message: 'This room is full' });
