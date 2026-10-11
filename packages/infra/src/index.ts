@@ -5,3 +5,5 @@ export * from './db/submission-repository';
 export * from './storage/supabase-image-store';
 export * from './ai/retry';
 export * from './ai/vision-mastra';
+export * from './voice/elevenlabs-speech';
+export * from './hints/fal-hints';
