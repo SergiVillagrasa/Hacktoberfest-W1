@@ -25,7 +25,7 @@ export interface MastraVisionOptions {
   generateDeadlineMs?: number;
 }
 
-const dataUrl = (bytes: Uint8Array) => `data:${sniffImageType(bytes) ?? 'image/jpeg'};base64,${Buffer.from(bytes).toString('base64')}`;
+const imagePart = (bytes: Uint8Array) => ({ type: 'image' as const, image: bytes, mediaType: sniffImageType(bytes) ?? 'image/jpeg' });
 
 export function createMastraVision({ modelId, apiKey, compareDeadlineMs = JUDGE_BUDGET_MS, generateDeadlineMs = 30_000 }: MastraVisionOptions): VisionModel {
   async function ask<S extends z.ZodType>(instructions: string, schema: S, images: Uint8Array[], text: string, deadlineMs: number, signal: AbortSignal): Promise<z.infer<S>> {
@@ -33,7 +33,7 @@ export function createMastraVision({ modelId, apiKey, compareDeadlineMs = JUDGE_
     return withRetry(
       async (attemptSignal) => {
         const res = await agent.generate(
-          [{ role: 'user', content: [...images.map((image) => ({ type: 'image' as const, image: dataUrl(image) })), { type: 'text' as const, text }] }],
+          [{ role: 'user', content: [...images.map(imagePart), { type: 'text' as const, text }] }],
           { structuredOutput: { schema }, abortSignal: attemptSignal, modelSettings: { maxRetries: 0 } },
         );
         if (!res.object) throw new Error('Vision model returned no structured output');
