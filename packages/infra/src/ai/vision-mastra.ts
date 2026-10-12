@@ -1,5 +1,5 @@
 import { Agent } from '@mastra/core/agent';
-import { JUDGE_BUDGET_MS, sniffImageType, type ClueSet, type MatchEvidence, type TargetValidation, type VisionModel } from '@snaphunt/core';
+import { JUDGE_HARD_BUDGET_MS, sniffImageType, type ClueSet, type MatchEvidence, type TargetValidation, type VisionModel } from '@snaphunt/core';
 import { z } from 'zod';
 import { CLUES_PROMPT, COMPARE_PROMPT, VALIDATE_PROMPT } from './prompts';
 import { withRetry } from './retry';
@@ -27,7 +27,7 @@ export interface MastraVisionOptions {
 
 const imagePart = (bytes: Uint8Array) => ({ type: 'image' as const, image: bytes, mediaType: sniffImageType(bytes) ?? 'image/jpeg' });
 
-export function createMastraVision({ modelId, apiKey, compareDeadlineMs = JUDGE_BUDGET_MS, generateDeadlineMs = 30_000 }: MastraVisionOptions): VisionModel {
+export function createMastraVision({ modelId, apiKey, compareDeadlineMs = JUDGE_HARD_BUDGET_MS, generateDeadlineMs = 30_000 }: MastraVisionOptions): VisionModel {
   async function ask<S extends z.ZodType>(instructions: string, schema: S, images: Uint8Array[], text: string, deadlineMs: number, signal: AbortSignal): Promise<z.infer<S>> {
     const agent = new Agent({ id: 'snaphunt-vision', name: 'SnapHunt Vision', instructions, model: { id: modelId as never, apiKey } });
     return withRetry(

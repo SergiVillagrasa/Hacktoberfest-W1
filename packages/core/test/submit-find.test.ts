@@ -1,22 +1,41 @@
 import { describe, expect, test, vi } from 'vitest';
-import { createMemoryGameRepository, createMemorySubmissionRepository, seededRng, submitFind, type FindDeps, type Game, type GameError, type ImageStore, type MatchEvidence } from '../src';
+import { createMemoryGameRepository, createMemorySubmissionRepository, seededRng, submitFind, tick, type FindDeps, type Game, type GameError, type ImageStore, type MatchEvidence } from '../src';
 import { T0, makeClue, makeGame, makePlayer, makeTarget } from './fixtures';
 
 const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 1]);
 const evidence = (sameObject: boolean, confidence = 0.95): MatchEvidence => ({ sameObject, confidence, matchingFeatures: [], differences: [] });
 const code = async (p: Promise<unknown>) => ((await p.then(() => null, (e: GameError) => e))?.code ?? null);
+const deferred = <T,>() => {
+  let resolve!: (v: T) => void;
+  let reject!: (e?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => ((resolve = res), (reject = rej)));
+  return { promise, resolve, reject };
+};
+const waitUntil = async (check: () => Promise<void> | void) => {
+  for (let i = 0; i < 200; i++) {
+    try {
+      await check();
+      return;
+    } catch {
+      await new Promise((r) => setTimeout(r, 5));
+    }
+  }
+  await check();
+};
 
-async function setup(opts: { compare?: FindDeps['vision']['compare']; game?: Partial<Game>; judgeBudgetMs?: number } = {}) {
+async function setup(opts: { compare?: FindDeps['vision']['compare']; game?: Partial<Game>; judgeBudgetMs?: number; judgeHardBudgetMs?: number; background?: FindDeps['background']; beforePut?: (bytes: Uint8Array) => Promise<void>; get?: ImageStore['get'] } = {}) {
   let n = 0;
-  const games = createMemoryGameRepository();
+  let now = T0.getTime() + 60_000;
   const submissions = createMemorySubmissionRepository();
+  const games = createMemoryGameRepository(submissions.all);
   const files = new Map<string, Uint8Array>();
-  const images: ImageStore = { put: async (p, b) => void files.set(p, b), get: async () => new Uint8Array([7]), signedUrl: async (p) => p };
+  const images: ImageStore = { put: async (p, b) => (await opts.beforePut?.(b), void files.set(p, b)), get: opts.get ?? (async () => new Uint8Array([7])), signedUrl: async (p) => p };
   const compare = vi.fn(opts.compare ?? (async () => evidence(true)));
   const deps: FindDeps = {
     games, submissions, images,
     vision: { compare, validateTarget: async () => ({ accepted: true, reason: null, label: '' }), writeClues: async () => ({ first: '', second: '', visual: '', judgeBusy: '' }) },
-    now: () => new Date(T0.getTime() + 60_000), rng: seededRng(2), newId: () => `n${++n}`, judgeBudgetMs: opts.judgeBudgetMs,
+    now: () => new Date(now), rng: seededRng(2), newId: () => `n${++n}`, judgeBudgetMs: opts.judgeBudgetMs, judgeHardBudgetMs: opts.judgeHardBudgetMs,
+    background: opts.background ?? ((task) => void task()),
   };
   const game = makeGame({
     code: 'ABCDE', version: 0,
@@ -27,14 +46,15 @@ async function setup(opts: { compare?: FindDeps['vision']['compare']; game?: Par
   });
   await games.create(game, {});
   const submit = (playerId: string, clueId: string, key = crypto.randomUUID(), bytes = JPEG) => submitFind(deps, { code: 'ABCDE', playerId, clueId, bytes, idempotencyKey: key });
-  return { deps, games, submissions, files, compare, submit };
+  return { deps, games, submissions, files, compare, submit, setNow: (ms: number) => void (now = ms) };
 }
 
 describe('submitFind', () => {
   test('a match scores the find and returns its points', async () => {
     const s = await setup();
     const res = await s.submit('a', 'ca');
-    expect(res).toMatchObject({ outcome: 'match', points: 900, attemptsLeft: 5, message: 'You found it!' });
+    expect(res).toMatchObject({ outcome: 'match', points: 900, attemptsLeft: 5, message: 'You found it!', pending: false });
+    expect(res.submissionId).toBeTruthy();
     const game = (await s.games.loadByCode('ABCDE'))!;
     expect(game.targets.find((t) => t.id === 'tb')).toMatchObject({ foundBy: 'a', points: 900 });
     expect(s.submissions.all).toMatchObject([{ outcome: 'match', points: 900, playerId: 'a' }]);
@@ -91,14 +111,30 @@ describe('submitFind', () => {
     expect(s.submissions.all.filter((r) => r.outcome === 'match')).toHaveLength(1);
   });
 
-  test('a judge that exceeds its budget gives a bonus clue and costs no attempt', async () => {
-    const s = await setup({ compare: () => new Promise(() => {}), judgeBudgetMs: 30 });
-    expect(await s.submit('a', 'ca')).toMatchObject({ outcome: 'judge_busy', attemptsLeft: 5, message: expect.stringContaining('bonus clue') });
+  test('a judge that passes the soft deadline reports pending, serves the bonus clue and keeps judging', async () => {
+    const gate = deferred<MatchEvidence>();
+    let seenSignal: AbortSignal | undefined;
+    const s = await setup({ compare: (_r, _c, signal) => ((seenSignal = signal), gate.promise), judgeBudgetMs: 20 });
+    const res = await s.submit('a', 'ca');
+    expect(res).toMatchObject({ outcome: 'judge_busy', pending: true, attemptsLeft: 5 });
+    expect(res.message).toContain('keep checking');
+    expect(res.submissionId).toBeTruthy();
+    expect(seenSignal!.aborted).toBe(false);
     const game = (await s.games.loadByCode('ABCDE'))!;
     expect(game.clues[0]).toMatchObject({ judgeBusyServed: true, status: 'active' });
+    expect(game.clues[0]!.judgement).toMatchObject({ id: res.submissionId, result: null });
     expect(game.players[0]!.failedAttempts).toBe(0);
+    expect(s.submissions.all).toMatchObject([{ outcome: 'pending', clueId: 'ca', playerId: 'a' }]);
+    gate.resolve(evidence(true));
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('match'));
+  });
+
+  test('a judge that fails outright still returns a busy result at no attempt cost', async () => {
     const failing = await setup({ compare: async () => Promise.reject(new Error('500')) });
-    expect(await failing.submit('a', 'ca')).toMatchObject({ outcome: 'judge_busy', attemptsLeft: 5 });
+    const res = await failing.submit('a', 'ca');
+    expect(res).toMatchObject({ outcome: 'judge_busy', attemptsLeft: 5 });
+    await waitUntil(async () => expect((await failing.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result).toMatchObject({ outcome: 'judge_busy', pending: false }));
+    expect((await failing.games.loadByCode('ABCDE'))!.players[0]!.failedAttempts).toBe(0);
   });
 
   test('submissions for an already found target, a finished game or someone else\'s clue are rejected without an attempt', async () => {
