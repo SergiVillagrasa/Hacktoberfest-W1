@@ -1,6 +1,6 @@
 import type { DomainEvent, Game } from '../domain/types';
 
-export type SubmissionOutcome = 'match' | 'no_match' | 'judge_busy' | 'already_found';
+export type SubmissionOutcome = 'match' | 'no_match' | 'judge_busy' | 'already_found' | 'pending';
 
 export interface StoredSubmission {
   id: string;
@@ -23,7 +23,7 @@ export interface GameRepository {
   loadByCode(code: string): Promise<Game | null>;
   findPlayerByTokenHash(hash: string): Promise<{ roomCode: string; playerId: string } | null>;
   /** Persists game if stored version === game.version, then increments version; appends events. Throws GameError('version_conflict'). */
-  save(game: Game, events: DomainEvent[], tokenHashes?: Record<string, string>): Promise<Game>;
+  save(game: Game, events: DomainEvent[], tokenHashes?: Record<string, string>, submissions?: StoredSubmission[]): Promise<Game>;
   version(code: string): Promise<number | null>;
   recentEvents(roomId: string, limit: number): Promise<StoredEvent[]>;
 }

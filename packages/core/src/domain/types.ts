@@ -1,3 +1,5 @@
+import type { SubmitResult } from '@snaphunt/contracts';
+
 export type RoomStatus = 'lobby' | 'countdown' | 'active' | 'finished';
 export type Phase = 'races' | 'solo';
 export type PlayerStatus = 'active' | 'eliminated' | 'out_of_attempts';
@@ -34,6 +36,15 @@ export interface Target {
   assets: TargetAssets;
 }
 
+export interface Judgement {
+  id: string;
+  idempotencyKey: string;
+  imagePath: string;
+  startedAt: number;
+  expiresAt: number;
+  result: SubmitResult | null;
+}
+
 export interface Clue {
   id: string;
   targetId: string;
@@ -43,6 +54,7 @@ export interface Clue {
   secondClueUsed: boolean;
   judgeBusyServed: boolean;
   status: ClueStatus;
+  judgement?: Judgement | null;
 }
 
 export interface Game {

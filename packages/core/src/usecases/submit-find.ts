@@ -65,7 +65,7 @@ export async function submitFind(deps: FindDeps, input: { code: string; playerId
   if (prior) {
     if (prior.playerId !== input.playerId) throw new GameError('forbidden', 'Idempotency key belongs to another player');
     const game = await games.loadByCode(input.code);
-    return result(prior.outcome, game!, input.playerId, prior.points);
+    return result(prior.outcome === 'pending' ? 'judge_busy' : prior.outcome, game!, input.playerId, prior.points);
   }
 
   const game = await tick(deps, input.code);

@@ -4,6 +4,7 @@ export const TIME_LIMIT_MINUTES = [10, 15, 20, 30] as const;
 export const COUNTDOWN_MS = 5000;
 export const MAX_FAILED_ATTEMPTS = 5;
 export const JUDGE_BUDGET_MS = 20000;
+export const JUDGE_HARD_BUDGET_MS = 60000;
 export const MATCH_THRESHOLD = 0.8;
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export const ROOM_CODE_LENGTH = 5;

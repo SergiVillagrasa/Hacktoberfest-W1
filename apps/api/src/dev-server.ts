@@ -34,9 +34,10 @@ const clueSet = (n: number): ClueSet => ({
   judgeBusy: `Clue ${n}, a bonus hint: it was here before the game started.`,
 });
 
+const submissions = createMemorySubmissionRepository();
 const app = createApp({
-  games: createMemoryGameRepository(),
-  submissions: createMemorySubmissionRepository(),
+  games: createMemoryGameRepository(submissions.all),
+  submissions,
   images,
   vision: {
     validateTarget: async () => ({ accepted: true, reason: null, label: 'thing' }),

@@ -10,9 +10,10 @@ export function makeDeps(overrides: Partial<AppDeps> = {}) {
     get: async (path) => files.get(path) ?? Promise.reject(new Error('missing')),
     signedUrl: async (path) => `https://signed/${path}`,
   };
+  const submissions = createMemorySubmissionRepository();
   const deps: AppDeps = {
-    games: createMemoryGameRepository(),
-    submissions: createMemorySubmissionRepository(),
+    games: createMemoryGameRepository(submissions.all),
+    submissions,
     images,
     vision: {
       validateTarget: async () => ({ accepted: true, reason: null, label: 'thing' }),
