@@ -35,6 +35,23 @@ async function startedRoom() {
   clock = new Date(countdownEnd.getTime() - 60_000 + 5000);
   return { ann, bob, code: ann.roomCode, clueOf: async (s: Session) => (await view(s)).body.myClues[0].id as string };
 }
+const deferred = <T,>() => {
+  let resolve!: (v: T) => void;
+  const promise = new Promise<T>((res) => (resolve = res));
+  return { promise, resolve };
+};
+const waitUntil = async (check: () => Promise<void> | void) => {
+  for (let i = 0; i < 200; i++) {
+    try {
+      await check();
+      return;
+    } catch {
+      await new Promise((r) => setTimeout(r, 10));
+    }
+  }
+  await check();
+};
+
 const submit = (code: string, clueId: string, s: Session | null, opts: { key?: string | null; body?: Buffer | string; type?: string } = {}) => {
   let req = request(app).post(`/rooms/${code}/clues/${clueId}/submissions`).set('content-type', opts.type ?? 'image/jpeg');
   if (s) req = req.set(auth(s));
@@ -77,6 +94,58 @@ describe('POST /rooms/:code/clues/:clueId/submissions', () => {
     expect((await submit(code, clue, bob, { body: 'hi', type: 'text/plain' })).status).toBe(415);
     expect((await submit(code, clue, null)).status).toBe(401);
     expect((await submit(code, clue, ann)).status).toBe(403);
+  });
+
+  test('a slow judge answers pending and the background verdict lands in the room view', async () => {
+    const gate = deferred<{ sameObject: boolean; confidence: number; matchingFeatures: string[]; differences: string[] }>();
+    ctx = makeDeps({ now: () => new Date(clock.getTime() + 60_000), judgeBudgetMs: 20 });
+    ctx.deps.vision.compare = () => gate.promise;
+    app = createApp(ctx.deps);
+    const { bob, code, clueOf } = await startedRoom();
+    const res = await submit(code, await clueOf(bob), bob);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ outcome: 'judge_busy', pending: true, attemptsLeft: 5 });
+    expect(res.body.submissionId).toBeTruthy();
+    gate.resolve({ sameObject: true, confidence: 1, matchingFeatures: [], differences: [] });
+    await ctx.runBackground();
+    await waitUntil(async () => {
+      const view = (await request(app).get(`/rooms/${code}`).set(auth(bob))).body;
+      expect(view.myClues[0].submission).toMatchObject({ id: res.body.submissionId, pending: false, result: { outcome: 'match' } });
+    });
+  });
+
+  test('a judge that dies before answering releases the clue for a fresh-key retry', async () => {
+    ctx = makeDeps({ now: () => new Date(clock.getTime() + 60_000), judgeBudgetMs: 10, judgeHardBudgetMs: 20 });
+    ctx.deps.vision.compare = () => new Promise(() => {});
+    app = createApp(ctx.deps);
+    const { bob, code, clueOf } = await startedRoom();
+    const clue = await clueOf(bob);
+    const res = await submit(code, clue, bob);
+    expect(res.body).toMatchObject({ outcome: 'judge_busy', pending: true });
+    await waitUntil(async () => {
+      const view = (await request(app).get(`/rooms/${code}`).set(auth(bob))).body;
+      expect(view.myClues[0].submission).toMatchObject({ pending: false, result: { outcome: 'judge_busy' } });
+    });
+    ctx.deps.vision.compare = async () => ({ sameObject: true, confidence: 1, matchingFeatures: [], differences: [] });
+    const retry = await submit(code, clue, bob);
+    expect(retry.body).toMatchObject({ outcome: 'match' });
+  });
+
+  test('spectator views never carry submission details', async () => {
+    const gate = deferred<{ sameObject: boolean; confidence: number; matchingFeatures: string[]; differences: string[] }>();
+    ctx = makeDeps({ now: () => new Date(clock.getTime() + 60_000), judgeBudgetMs: 20 });
+    ctx.deps.vision.compare = () => gate.promise;
+    app = createApp(ctx.deps);
+    const { ann, bob, code, clueOf } = await startedRoom();
+    const res = await submit(code, await clueOf(bob), bob);
+    expect(res.body.pending).toBe(true);
+    const game = (await ctx.deps.games.loadByCode(code))!;
+    await ctx.deps.games.save({ ...game, players: game.players.map((p) => (p.id === ann.playerId ? { ...p, status: 'eliminated' as const } : p)) }, []);
+    const view = (await request(app).get(`/rooms/${code}`).set(auth(ann))).body;
+    expect(view.spectatorClues.length).toBeGreaterThan(0);
+    expect(view.spectatorClues.every((c: { submission?: unknown }) => c.submission === undefined)).toBe(true);
+    expect(JSON.stringify(view)).not.toContain('/submissions/');
+    gate.resolve({ sameObject: false, confidence: 0.9, matchingFeatures: [], differences: [] });
   });
 
   test('a player who is out gets 409 not_active_player', async () => {

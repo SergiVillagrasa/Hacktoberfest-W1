@@ -38,7 +38,7 @@ export async function getView(deps: ViewDeps, game: Game, playerId: string, now:
   const finished = game.status === 'finished';
   const playing = game.status === 'active' || finished;
 
-  const clueView = async (c: Clue): Promise<ClueView> => {
+  const clueView = async (c: Clue, own: boolean): Promise<ClueView> => {
     const { assets } = targetOf(c.targetId);
     const visual = c.kind === 'visual';
     const text = playing ? (visual ? assets.clues?.visual : assets.clues?.first) ?? null : null;
@@ -57,17 +57,18 @@ export async function getView(deps: ViewDeps, game: Game, playerId: string, now:
       hintStatus: visual ? (assets.hintPath ? 'ready' : assets.prep === 'ready' ? 'unavailable' : 'pending') : null,
       secondClueUsed: c.secondClueUsed,
       issuedAt: iso(c.issuedAt),
+      ...(own && c.judgement ? { submission: { id: c.judgement.id, pending: c.judgement.result === null, result: c.judgement.result } } : {}),
     };
   };
 
   const watching = me.status !== 'active';
   const ownTarget = game.targets.find((t) => t.ownerId === playerId);
   const [myClues, spectatorClues, events] = await Promise.all([
-    Promise.all(game.clues.filter((c) => c.hunterId === playerId).map(clueView)),
-    Promise.all((watching ? game.clues.filter((c) => c.hunterId !== playerId && c.status === 'active' && playing) : []).map(clueView)),
+    Promise.all(game.clues.filter((c) => c.hunterId === playerId).map((c) => clueView(c, true))),
+    Promise.all((watching ? game.clues.filter((c) => c.hunterId !== playerId && c.status === 'active' && playing) : []).map((c) => clueView(c, false))),
     deps.games.recentEvents(game.roomId, FEED_LIMIT),
   ]);
-  const feed: FeedItem[] = events.map((e) => ({ at: iso(e.at), type: e.type, text: feedText(e, name), photoUrl: null }));
+  const feed: FeedItem[] = events.map((e) => ({ at: iso(e.at), type: e.type, text: feedText(e, name), photoUrl: null, ...(e.type === 'target_found' ? { hunterId: e.hunterId } : {}) }));
 
   const matches = finished ? await deps.submissions.listMatches(game.roomId) : [];
   const findPhotoOf = (targetId: string) => matches.find((m) => game.clues.find((c) => c.id === m.clueId)?.targetId === targetId)?.imagePath ?? null;
