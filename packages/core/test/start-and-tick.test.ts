@@ -80,6 +80,21 @@ describe('tick', () => {
     expect(games.events.map((e) => e.type)).toEqual(['game_started', 'game_finished']);
   });
 
+  test('finalizes a pending judgement once its game is over or its deadline passed', async () => {
+    const { deps, games, code: c, sessions } = await setup();
+    await startRoom(deps, { code: c, actorId: sessions[0]!.playerId });
+    deps.setNow(new Date(T0.getTime() + COUNTDOWN_MS));
+    const active = await tick(deps, c);
+    const clue = active.clues[0]!;
+    const judgement = { id: 's1', idempotencyKey: 'k1', imagePath: 's.jpg', startedAt: 1, expiresAt: Number.MAX_SAFE_INTEGER, result: null };
+    const version = active.version;
+    const finished = { ...active, status: 'finished' as const, clues: active.clues.map((x) => (x.id === clue.id ? { ...x, judgement } : x)) };
+    await games.save(finished, []);
+    const done = await tick(deps, c);
+    expect(done.version).toBe(version + 2);
+    expect(done.clues.find((x) => x.id === clue.id)!.judgement!.result).toMatchObject({ outcome: 'judge_busy', pending: false });
+  });
+
   test('unknown rooms are not_found', async () => {
     const { deps } = await setup();
     expect(await code(tick(deps, 'ZZZZZ'))).toBe('not_found');

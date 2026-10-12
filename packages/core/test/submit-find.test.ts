@@ -152,6 +152,32 @@ describe('submitFind', () => {
     expect(m.submissions.all).toMatchObject([{ outcome: 'no_match', points: null }]);
   });
 
+  test('a judge that passes the hard deadline ends the submission as busy and frees the clue for a fresh key', async () => {
+    const gate = deferred<MatchEvidence>();
+    let seenSignal: AbortSignal | undefined;
+    const s = await setup({ compare: (_r, _c, signal) => ((seenSignal = signal), gate.promise), judgeBudgetMs: 20, judgeHardBudgetMs: 40 });
+    const res = await s.submit('a', 'ca');
+    expect(res).toMatchObject({ outcome: 'judge_busy', pending: true });
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('judge_busy'));
+    expect(seenSignal!.aborted).toBe(true);
+    let game = (await s.games.loadByCode('ABCDE'))!;
+    expect(game.clues[0]!.judgement!.result).toMatchObject({ outcome: 'judge_busy', pending: false, message: expect.stringContaining('try again') });
+    expect(game.players[0]!.failedAttempts).toBe(0);
+    expect(s.submissions.all).toMatchObject([{ outcome: 'judge_busy', points: null }]);
+
+    s.compare.mockImplementation(async () => evidence(true));
+    expect(await s.submit('a', 'ca', crypto.randomUUID())).toMatchObject({ outcome: 'match', pending: false });
+    game = (await s.games.loadByCode('ABCDE'))!;
+    expect(game.targets.find((t) => t.id === 'tb')).toMatchObject({ foundBy: 'a' });
+
+    gate.resolve(evidence(false));
+    await new Promise((r) => setTimeout(r, 10));
+    game = (await s.games.loadByCode('ABCDE'))!;
+    expect(game.clues[0]!.judgement!.result!.outcome).toBe('match');
+    expect(game.players[0]!.failedAttempts).toBe(0);
+    expect(s.submissions.all.filter((r2) => r2.outcome === 'match')).toHaveLength(1);
+  });
+
   test('concurrent submissions for one clue reserve once and judge once', async () => {
     const gate = deferred<MatchEvidence>();
     const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20 });
@@ -224,6 +250,48 @@ describe('submitFind', () => {
     expect(game.players[0]!.failedAttempts).toBe(0);
   });
 
+  test('a verdict that lands after its persisted expiry ends busy even while the hunt still runs', async () => {
+    const gate = deferred<MatchEvidence>();
+    const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20, judgeHardBudgetMs: 30_000 });
+    const res = await s.submit('a', 'ca');
+    expect(res.pending).toBe(true);
+    s.setNow(T0.getTime() + 60_000 + 30_000 + 5000 + 1);
+    gate.resolve(evidence(true));
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('judge_busy'));
+    const game = (await s.games.loadByCode('ABCDE'))!;
+    expect(game.status).toBe('active');
+    expect(game.clues[0]!.judgement!.result!.message).toContain('try again');
+    expect(game.targets.find((t) => t.id === 'tb')!.foundBy).toBeNull();
+    expect(game.players[0]!.failedAttempts).toBe(0);
+  });
+
+  test('a reference photo that resolves after the hard deadline never reaches the judge', async () => {
+    const getGate = deferred<Uint8Array>();
+    const s = await setup({ get: () => getGate.promise, judgeBudgetMs: 20, judgeHardBudgetMs: 40 });
+    const res = await s.submit('a', 'ca');
+    expect(res.pending).toBe(true);
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('judge_busy'));
+    getGate.resolve(new Uint8Array([9]));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(s.compare).not.toHaveBeenCalled();
+    expect((await s.games.loadByCode('ABCDE'))!.players[0]!.failedAttempts).toBe(0);
+  });
+
+  test('replaying a hard-busy key after a later verdict returns the terminal retry message', async () => {
+    const gate = deferred<MatchEvidence>();
+    const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20, judgeHardBudgetMs: 40 });
+    const key = crypto.randomUUID();
+    const res = await s.submit('a', 'ca', key);
+    expect(res.pending).toBe(true);
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('judge_busy'));
+    s.compare.mockImplementation(async () => evidence(false));
+    await s.submit('a', 'ca', crypto.randomUUID());
+    const replay = await s.submit('a', 'ca', key);
+    expect(replay).toMatchObject({ outcome: 'judge_busy', pending: false });
+    expect(replay.message).toContain('try again');
+    expect(replay.message).not.toContain('keep checking');
+  });
+
   test('a verdict that lands after a rival found the target or the game moved on scores nothing', async () => {
     const gate = deferred<MatchEvidence>();
     const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20 });
@@ -250,6 +318,39 @@ describe('submitFind', () => {
     game = (await e.games.loadByCode('ABCDE'))!;
     expect(game.clues[0]!.judgement!.result!.message).toContain('ended');
     expect(game.players[0]!.failedAttempts).toBe(0);
+  });
+
+  test('a verdict that lands after time ran out ends busy without charging an attempt', async () => {
+    const gate = deferred<MatchEvidence>();
+    const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20 });
+    await s.submit('a', 'ca');
+    s.setNow(T0.getTime() + 60_000 + 600_000);
+    gate.resolve(evidence(true));
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('judge_busy'));
+    const game = (await s.games.loadByCode('ABCDE'))!;
+    expect(game.status).toBe('finished');
+    expect(game.clues[0]!.judgement!.result!.message).toContain('ended');
+    expect(game.players[0]!.failedAttempts).toBe(0);
+  });
+
+  test('a lost judge is expired by the clock, its submission closed and the clue freed', async () => {
+    const gate = deferred<MatchEvidence>();
+    const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20, judgeHardBudgetMs: 10_000 });
+    const res = await s.submit('a', 'ca');
+    expect(res.pending).toBe(true);
+    s.setNow(T0.getTime() + 60_000 + 10_000 + 5000 + 1);
+    const game = await tick(s.deps, 'ABCDE');
+    expect(game.clues[0]!.judgement!.result).toMatchObject({ outcome: 'judge_busy', pending: false });
+    expect(game.clues[0]!.judgement!.result!.message).toContain('try again');
+    expect(s.submissions.all).toMatchObject([{ outcome: 'judge_busy', points: null }]);
+    s.compare.mockImplementation(async () => evidence(true));
+    expect(await s.submit('a', 'ca')).toMatchObject({ outcome: 'match', pending: false });
+    gate.resolve(evidence(false));
+    await new Promise((r) => setTimeout(r, 20));
+    const after = (await s.games.loadByCode('ABCDE'))!;
+    expect(after.clues[0]!.judgement!.result!.outcome).toBe('match');
+    expect(s.submissions.all.filter((r2) => r2.outcome === 'match')).toHaveLength(1);
+    expect(s.submissions.all.filter((r2) => r2.outcome !== 'match')).toHaveLength(1);
   });
 
   test('a judge that fails outright still returns a busy result at no attempt cost', async () => {
