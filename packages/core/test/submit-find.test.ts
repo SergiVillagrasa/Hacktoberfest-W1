@@ -129,6 +129,129 @@ describe('submitFind', () => {
     await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('match'));
   });
 
+  test('a verdict that lands after the response applies once: match scores, a miss charges one attempt', async () => {
+    const gate = deferred<MatchEvidence>();
+    const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20 });
+    await s.submit('a', 'ca');
+    gate.resolve(evidence(true));
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('match'));
+    let game = (await s.games.loadByCode('ABCDE'))!;
+    expect(game.targets.find((t) => t.id === 'tb')).toMatchObject({ foundBy: 'a', points: 900 });
+    expect(game.clues[0]!.judgement!.result).toMatchObject({ outcome: 'match', pending: false });
+    expect(game.players[0]!.failedAttempts).toBe(0);
+    expect(s.submissions.all).toMatchObject([{ outcome: 'match', points: 900 }]);
+    expect(s.compare).toHaveBeenCalledTimes(1);
+
+    const miss = deferred<MatchEvidence>();
+    const m = await setup({ compare: () => miss.promise, judgeBudgetMs: 20 });
+    await m.submit('a', 'ca');
+    miss.resolve(evidence(false));
+    await waitUntil(async () => expect((await m.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('no_match'));
+    game = (await m.games.loadByCode('ABCDE'))!;
+    expect(game.players[0]!.failedAttempts).toBe(1);
+    expect(m.submissions.all).toMatchObject([{ outcome: 'no_match', points: null }]);
+  });
+
+  test('concurrent submissions for one clue reserve once and judge once', async () => {
+    const gate = deferred<MatchEvidence>();
+    const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20 });
+    const key = crypto.randomUUID();
+    const [x, y, z] = await Promise.all([s.submit('a', 'ca', key), s.submit('a', 'ca', key), s.submit('a', 'ca', crypto.randomUUID())]);
+    expect(s.compare).toHaveBeenCalledTimes(1);
+    for (const res of [x, y, z]) expect(res).toMatchObject({ outcome: 'judge_busy', pending: true });
+    gate.resolve(evidence(false));
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('no_match'));
+    expect((await s.games.loadByCode('ABCDE'))!.players[0]!.failedAttempts).toBe(1);
+    expect(s.submissions.all).toHaveLength(1);
+  });
+
+  test('another photo while the judge is still working reports the pending submission without uploading or judging', async () => {
+    const gate = deferred<MatchEvidence>();
+    const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20 });
+    const first = await s.submit('a', 'ca');
+    const uploads = s.files.size;
+    const again = await s.submit('a', 'ca', crypto.randomUUID());
+    expect(again).toMatchObject({ outcome: 'judge_busy', pending: true, submissionId: first.submissionId });
+    expect(s.files.size).toBe(uploads);
+    expect(s.compare).toHaveBeenCalledTimes(1);
+    gate.resolve(evidence(true));
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('match'));
+  });
+
+  test('a same-key retry that finishes uploading after a fast match returns the original result', async () => {
+    const JPEG2 = new Uint8Array([0xff, 0xd8, 0xff, 2]);
+    const gate = deferred<void>();
+    const s = await setup({ beforePut: async (b) => void (b === JPEG2 && (await gate.promise)) });
+    const key = crypto.randomUUID();
+    const retry = s.submit('a', 'ca', key, JPEG2);
+    await new Promise((r) => setTimeout(r, 0));
+    const first = await s.submit('a', 'ca', key);
+    expect(first).toMatchObject({ outcome: 'match', pending: false, points: 900 });
+    gate.resolve();
+    expect(await retry).toEqual(first);
+    expect(s.compare).toHaveBeenCalledTimes(1);
+    expect(s.submissions.all).toMatchObject([{ outcome: 'match', idempotencyKey: key }]);
+  });
+
+  test('an idempotency key is scoped to its player, clue and room', async () => {
+    const s = await setup({ game: { clues: [makeClue('ca', 'tb', 'a'), makeClue('cx', 'tc', 'a'), makeClue('cb', 'ta', 'b')] } });
+    const key = crypto.randomUUID();
+    await s.submit('a', 'ca', key);
+    const files = s.files.size;
+    expect(await code(s.submit('b', 'cb', key))).toBe('forbidden');
+    expect(await code(s.submit('a', 'cx', key))).toBe('forbidden');
+    await s.games.create(makeGame({ code: 'FGHIJ', roomId: 'room-2', players: [makePlayer('x')], targets: [makeTarget('tx', 'x')], clues: [makeClue('cx', 'tx', 'x')] }), {});
+    expect(await code(submitFind(s.deps, { code: 'FGHIJ', playerId: 'x', clueId: 'cx', bytes: JPEG, idempotencyKey: key }))).toBe('forbidden');
+    expect(s.files.size).toBe(files);
+    expect(s.compare).toHaveBeenCalledTimes(1);
+  });
+
+  test('a slow upload that finishes after the hunt ended never reserves or judges', async () => {
+    const JPEG2 = new Uint8Array([0xff, 0xd8, 0xff, 2]);
+    const gate = deferred<void>();
+    const endsAt = new Date(T0.getTime() + 60_000 + 5_000);
+    const s = await setup({ game: { endsAt }, beforePut: async (b) => void (b === JPEG2 && (await gate.promise)) });
+    const pending = s.submit('a', 'ca', crypto.randomUUID(), JPEG2);
+    await new Promise((r) => setTimeout(r, 0));
+    s.setNow(endsAt.getTime() + 1);
+    gate.resolve();
+    await expect(pending).rejects.toMatchObject({ code: 'clue_not_active' });
+    const game = (await s.games.loadByCode('ABCDE'))!;
+    expect(game.status).toBe('finished');
+    expect(game.clues[0]!.judgement).toBeUndefined();
+    expect(s.submissions.all).toHaveLength(0);
+    expect(s.compare).not.toHaveBeenCalled();
+    expect(game.players[0]!.failedAttempts).toBe(0);
+  });
+
+  test('a verdict that lands after a rival found the target or the game moved on scores nothing', async () => {
+    const gate = deferred<MatchEvidence>();
+    const s = await setup({ compare: () => gate.promise, judgeBudgetMs: 20 });
+    await s.submit('a', 'ca');
+    let game = (await s.games.loadByCode('ABCDE'))!;
+    await s.games.save({ ...game, targets: game.targets.map((t) => (t.id === 'tb' ? { ...t, foundBy: 'b', foundAt: new Date(), points: 500 } : t)) }, []);
+    gate.resolve(evidence(true));
+    await waitUntil(async () => expect((await s.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('already_found'));
+    game = (await s.games.loadByCode('ABCDE'))!;
+    expect(game.targets.find((t) => t.id === 'tb')).toMatchObject({ foundBy: 'b', points: 500 });
+    expect(game.players[0]!.failedAttempts).toBe(0);
+    expect(s.submissions.all).toMatchObject([{ outcome: 'already_found', points: null }]);
+
+    const gate2 = deferred<MatchEvidence>();
+    const e = await setup({ compare: () => gate2.promise, judgeBudgetMs: 20 });
+    await e.submit('a', 'ca');
+    game = (await e.games.loadByCode('ABCDE'))!;
+    await e.games.save(
+      { ...game, players: game.players.map((p) => (p.id === 'a' ? { ...p, status: 'eliminated' as const } : p)), clues: game.clues.map((c) => (c.hunterId === 'a' ? { ...c, status: 'cancelled' as const } : c)) },
+      [],
+    );
+    gate2.resolve(evidence(true));
+    await waitUntil(async () => expect((await e.games.loadByCode('ABCDE'))!.clues[0]!.judgement?.result?.outcome).toBe('judge_busy'));
+    game = (await e.games.loadByCode('ABCDE'))!;
+    expect(game.clues[0]!.judgement!.result!.message).toContain('ended');
+    expect(game.players[0]!.failedAttempts).toBe(0);
+  });
+
   test('a judge that fails outright still returns a busy result at no attempt cost', async () => {
     const failing = await setup({ compare: async () => Promise.reject(new Error('500')) });
     const res = await failing.submit('a', 'ca');
