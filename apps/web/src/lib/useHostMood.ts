@@ -17,7 +17,7 @@ export interface Mood {
  * The host's reactions: what the player just did and what happens around the table, played one after another.
  * History is not replayed on first load, and the player's own result is not talked over.
  */
-export function useHostMood(feed: FeedItem[]) {
+export function useHostMood(feed: FeedItem[], ownPlayerId?: string) {
   const [moment, setMoment] = useState<Mood | null>(null);
   const [announcing, setAnnouncing] = useState(false);
   const seen = useRef<Set<string> | null>(null);
@@ -49,10 +49,10 @@ export function useHostMood(feed: FeedItem[]) {
     }
     for (const item of freshItems(seen.current, feed)) {
       seen.current.add(feedKey(item));
-      const announcement = announcementFor(item);
+      const announcement = announcementFor(item, ownPlayerId);
       if (announcement && Date.now() >= quietUntil.current) announce(announcement);
     }
-  }, [feed, announce]);
+  }, [feed, announce, ownPlayerId]);
 
   return { moment, announcing, announce, say, stayQuiet };
 }
