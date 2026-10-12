@@ -26,6 +26,8 @@ export const GameErrorCodeSchema = z.enum([
 export const SessionResponse = z.object({ roomCode: RoomCodeParam, playerId: z.string(), token: z.string() });
 export const SubmitResult = z.object({
   outcome: z.enum(['match', 'no_match', 'judge_busy', 'already_found']),
+  submissionId: z.string().optional(),
+  pending: z.boolean().optional(),
   points: z.number().int().optional(),
   attemptsLeft: z.number().int().min(0),
   message: z.string(),

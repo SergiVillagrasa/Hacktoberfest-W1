@@ -9,7 +9,11 @@ export interface SseOptions {
 
 export const DEFAULT_SSE: SseOptions = { pollMs: 1000, pingMs: 15_000, maxMs: 280_000 };
 
-const clockDueAt = (game: Game) => (game.status === 'countdown' ? game.countdownEndsAt : game.status === 'active' ? game.endsAt : null);
+const clockDueAt = (game: Game) => {
+  const clock = game.status === 'countdown' ? game.countdownEndsAt : game.status === 'active' ? game.endsAt : null;
+  const times = [clock, ...game.clues.map((c) => c.judgement).filter((j) => j && !j.result).map((j) => new Date(j!.expiresAt))].filter((d): d is Date => !!d).map((d) => d.getTime());
+  return times.length ? new Date(Math.min(...times)) : null;
+};
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 export async function streamRoom(deps: StartDeps & ViewDeps, req: Request, res: Response, code: string, playerId: string, options: Partial<SseOptions> = {}) {

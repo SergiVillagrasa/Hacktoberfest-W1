@@ -118,6 +118,25 @@ describe('getView visibility', () => {
     expect(recap.find((r) => r.targetId === 'tc')!.findPhotoUrl).toBeNull();
   });
 
+  test('your own clue exposes its submission state; other players\' submissions stay hidden', async () => {
+    const g = activeGame();
+    g.clues[0]!.judgement = { id: 's1', idempotencyKey: 'k1', imagePath: 'sec-a.jpg', startedAt: 1, expiresAt: 2, result: null };
+    g.clues[1]!.judgement = { id: 's2', idempotencyKey: 'k2', imagePath: 'sec-b.jpg', startedAt: 1, expiresAt: 2, result: { outcome: 'no_match', submissionId: 's2', pending: false, attemptsLeft: 4, message: 'Nope' } };
+    const mine = await view(g, 'a');
+    expect(mine.myClues[0]!.submission).toEqual({ id: 's1', pending: true, result: null });
+    expect(RoomView.safeParse(mine).success).toBe(true);
+    g.players[0]!.status = 'eliminated';
+    g.clues[0]!.status = 'lost';
+    const watching = await view(g, 'a');
+    expect(watching.myClues[0]!.submission).toMatchObject({ id: 's1', pending: true });
+    expect(watching.spectatorClues.length).toBeGreaterThan(0);
+    expect(watching.spectatorClues.every((c) => c.submission === undefined)).toBe(true);
+    expect(JSON.stringify(watching.spectatorClues)).not.toContain('sec-b.jpg');
+    expect(JSON.stringify(watching.spectatorClues)).not.toContain('k2');
+    const final = await view(g, 'b');
+    expect(final.myClues.find((c) => c.id === 'cb')!.submission).toMatchObject({ id: 's2', pending: false, result: { outcome: 'no_match' } });
+  });
+
   test('me.attemptsLeft and unknown players', async () => {
     const g = activeGame();
     g.players[0]!.failedAttempts = 2;
@@ -131,7 +150,7 @@ describe('getView visibility', () => {
     await d.games.create(g, {});
     const saved = await d.games.save(g, [{ type: 'target_found', at: T0, targetId: 'tb', hunterId: 'a', points: 900, kind: 'voice' }]);
     const v = await getView(d, saved, 'b', T0);
-    expect(v.feed).toMatchObject([{ type: 'target_found', text: 'A found a target (+900)', photoUrl: null }]);
+    expect(v.feed).toMatchObject([{ type: 'target_found', text: 'A found a target (+900)', photoUrl: null, hunterId: 'a' }]);
     expect(JSON.stringify(v.feed)).not.toContain('tb');
   });
 });

@@ -1,8 +1,8 @@
 import { GameError } from '../domain/errors';
 import type { DomainEvent, Game } from '../domain/types';
-import type { GameRepository, StoredEvent } from '../ports';
+import type { GameRepository, StoredEvent, StoredSubmission } from '../ports';
 
-export function createMemoryGameRepository(): GameRepository & { events: StoredEvent[] } {
+export function createMemoryGameRepository(sharedSubmissions?: StoredSubmission[]): GameRepository & { events: StoredEvent[] } {
   const roomOf = new Map<number, string>();
   const games = new Map<string, Game>();
   const tokens = new Map<string, { roomCode: string; playerId: string }>();
@@ -27,10 +27,24 @@ export function createMemoryGameRepository(): GameRepository & { events: StoredE
     async findPlayerByTokenHash(hash) {
       return tokens.get(hash) ?? null;
     },
-    async save(game, evs: DomainEvent[], tokenHashes = {}) {
+    async save(game, evs: DomainEvent[], tokenHashes = {}, batch: StoredSubmission[] = []) {
       const stored = games.get(game.code);
+      if (sharedSubmissions) {
+        for (const s of batch) {
+          const existing = sharedSubmissions.find((x) => x.idempotencyKey === s.idempotencyKey);
+          if (existing && (existing.id !== s.id || existing.roomId !== s.roomId || existing.clueId !== s.clueId || existing.playerId !== s.playerId))
+            throw new GameError('forbidden', 'Idempotency key belongs to another submission');
+        }
+      }
       if (!stored || stored.version !== game.version) throw new GameError('version_conflict', 'Game changed, please retry');
       const next = { ...structuredClone(game), version: game.version + 1 };
+      if (sharedSubmissions) {
+        for (const s of batch) {
+          const existing = sharedSubmissions.find((x) => x.idempotencyKey === s.idempotencyKey);
+          if (existing) Object.assign(existing, { outcome: s.outcome, points: s.points, evidence: s.evidence });
+          else sharedSubmissions.push(structuredClone(s));
+        }
+      }
       games.set(game.code, next);
       indexTokens(next, tokenHashes);
       for (const e of evs) {

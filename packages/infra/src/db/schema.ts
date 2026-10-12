@@ -1,5 +1,5 @@
 import { index, integer, jsonb, pgTable, bigserial, boolean, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
-import type { TargetAssets } from '@snaphunt/core';
+import type { Judgement, TargetAssets } from '@snaphunt/core';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 
@@ -54,6 +54,7 @@ export const clues = pgTable('clues', {
   secondClueUsed: boolean('second_clue_used').notNull().default(false),
   judgeBusyServed: boolean('judge_busy_served').notNull().default(false),
   status: text('status').notNull(),
+  judgement: jsonb('judgement').$type<Judgement>(),
 });
 
 export const submissions = pgTable('submissions', {

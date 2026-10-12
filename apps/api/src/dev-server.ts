@@ -23,6 +23,7 @@ const images: ImageStore = {
 const voice = new Uint8Array(await readFile(new URL('../../web/public/voice/find.mp3', import.meta.url)));
 const mascot = await loadPugMascot();
 let verdict: 'match' | 'no_match' | 'busy' = 'match';
+let judgeDelayMs = 0;
 let hintsWork = true;
 let clueCount = 0;
 
@@ -34,14 +35,16 @@ const clueSet = (n: number): ClueSet => ({
   judgeBusy: `Clue ${n}, a bonus hint: it was here before the game started.`,
 });
 
+const submissions = createMemorySubmissionRepository();
 const app = createApp({
-  games: createMemoryGameRepository(),
-  submissions: createMemorySubmissionRepository(),
+  games: createMemoryGameRepository(submissions.all),
+  submissions,
   images,
   vision: {
     validateTarget: async () => ({ accepted: true, reason: null, label: 'thing' }),
     writeClues: async () => clueSet(++clueCount),
     compare: async () => {
+      if (judgeDelayMs) await new Promise((r) => setTimeout(r, judgeDelayMs));
       if (verdict === 'busy') throw new Error('fake judge is busy');
       return evidence(verdict === 'match');
     },
@@ -54,6 +57,7 @@ const app = createApp({
   newId: randomUUID,
   webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:3000',
   sse: { pollMs: 400 },
+  judgeBudgetMs: Number(process.env.JUDGE_BUDGET_MS ?? 20_000),
 });
 
 app.get('/__img/:path', (req, res) => {
@@ -66,7 +70,8 @@ app.get('/__img/:path', (req, res) => {
 app.post('/__fake/verdict', (req, res) => {
   const outcome = req.query.outcome;
   if (outcome === 'match' || outcome === 'no_match' || outcome === 'busy') verdict = outcome;
-  res.json({ outcome: verdict });
+  if (req.query.delay !== undefined) judgeDelayMs = Math.max(0, Number(req.query.delay) || 0);
+  res.json({ outcome: verdict, delay: judgeDelayMs });
 });
 
 app.post('/__fake/hints', (req, res) => {

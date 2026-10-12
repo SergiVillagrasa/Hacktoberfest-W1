@@ -1,12 +1,13 @@
 'use client';
 
-import type { RoomView, SubmitResult } from '@snaphunt/contracts';
+import type { ClueView, RoomView, SubmitResult } from '@snaphunt/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { VisualClueCard } from '@/components/clues/VisualClueCard';
 import { VoiceClueCard } from '@/components/clues/VoiceClueCard';
 import { Mascot } from '@/components/mascot/Mascot';
 import { playClue } from '@/lib/audio';
 import { api, errorMessage } from '@/lib/client';
+import { acceptJudgementResult, unseenJudgementResults } from '@/lib/judgements';
 import { scrollToTop } from '@/lib/scroll';
 import { useHostMood, type Mood } from '@/lib/useHostMood';
 import { AttemptsDots } from './AttemptsDots';
@@ -31,9 +32,10 @@ export function Hunt({ code, token, view, clockOffsetMs, refresh }: HuntProps) {
   const [asking, setAsking] = useState(false);
   const spokenClues = useRef(new Set<string>());
   const bonusPlayed = useRef(new Set<string>());
+  const seenSubmissions = useRef(new Set<string>());
   const me = view.players.find((p) => p.id === view.me.playerId);
   const clues = view.myClues.filter((c) => c.status === 'active');
-  const { moment, announcing, announce, say, stayQuiet } = useHostMood(view.feed);
+  const { moment, announcing, announce, say, stayQuiet } = useHostMood(view.feed, view.me.playerId);
 
   const speak = useCallback((url: string, text: string) => {
     setSpeaking(text);
@@ -55,7 +57,13 @@ export function Hunt({ code, token, view, clockOffsetMs, refresh }: HuntProps) {
     }
   }, [clues, speak, announcing]);
 
-  function onResult(result: SubmitResult) {
+  useEffect(() => {
+    for (const result of unseenJudgementResults(view.myClues, seenSubmissions.current)) {
+      reactToResult(result);
+    }
+  }, [view.myClues]);
+
+  function reactToResult(result: SubmitResult) {
     stayQuiet(8000);
     const points = result.points ? ` +${result.points} points` : '';
     if (result.outcome === 'match') announce({ state: 'celebrating', line: `${result.message}${points}`, clip: 'find', holdMs: 4500, scroll: true });
@@ -63,6 +71,14 @@ export function Hunt({ code, token, view, clockOffsetMs, refresh }: HuntProps) {
     else if (result.outcome === 'judge_busy') say('talking', result.message, 4500, true);
     else say('shocked', result.message, 4500, true);
     refresh();
+  }
+
+  function onResult(result: SubmitResult) {
+    if (!acceptJudgementResult(result, seenSubmissions.current)) {
+      refresh();
+      return;
+    }
+    reactToResult(result);
   }
 
   async function secondClue(clueId: string) {
@@ -78,13 +94,14 @@ export function Hunt({ code, token, view, clockOffsetMs, refresh }: HuntProps) {
   }
 
   const mood: Mood = sending ? { state: 'thinking', line: 'Hmm, let me take a look...' } : moment ?? (speaking ? { state: 'talking', line: speaking } : IDLE);
-  const submit = (clueId: string, label: string) => (
+  const submit = (clue: ClueView, label: string) => (
     <SubmitFlow
       code={code}
       token={token}
-      clueId={clueId}
+      clueId={clue.id}
       label={label}
       disabled={sending}
+      submission={clue.submission}
       onSending={(now) => {
         setSending(now);
         if (now) scrollToTop();
@@ -115,9 +132,9 @@ export function Hunt({ code, token, view, clockOffsetMs, refresh }: HuntProps) {
       ) : (
         clues.map((clue) =>
           clue.kind === 'visual' ? (
-            <VisualClueCard key={clue.id} clue={clue} onPlay={speak} submit={submit(clue.id, 'Found it? Take a photo')} />
+            <VisualClueCard key={clue.id} clue={clue} onPlay={speak} submit={submit(clue, 'Found it? Take a photo')} />
           ) : (
-            <VoiceClueCard key={clue.id} clue={clue} onPlay={speak} asking={asking} onSecondClue={() => void secondClue(clue.id)} submit={submit(clue.id, 'Found it? Take a photo')} />
+            <VoiceClueCard key={clue.id} clue={clue} onPlay={speak} asking={asking} onSecondClue={() => void secondClue(clue.id)} submit={submit(clue, 'Found it? Take a photo')} />
           ),
         )
       )}

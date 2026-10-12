@@ -76,6 +76,29 @@ describe('GET /rooms/:code/events', () => {
     expect(res.body).not.toContain('secret-1.jpg');
   });
 
+  test('the stream clock wakes on a pending judgement deadline and pushes its final result', async () => {
+    const { ann, bob, code } = await room();
+    await request(app).post(`/rooms/${code}/start`).set('authorization', `Bearer ${ann.token}`);
+    clock = new Date(T0.getTime() + 5000);
+    await request(app).get(`/rooms/${code}`).set('authorization', `Bearer ${bob.token}`);
+    const loaded = (await ctx.deps.games.loadByCode(code))!;
+    const clue = loaded.clues.find((c) => c.hunterId === bob.playerId)!;
+    const key = crypto.randomUUID();
+    const judgement = { id: 'j1', idempotencyKey: key, imagePath: 's.jpg', startedAt: 1, expiresAt: clock.getTime() + 60, result: null };
+    await ctx.deps.games.save(
+      { ...loaded, clues: loaded.clues.map((c) => (c.id === clue.id ? { ...c, judgement } : c)) },
+      [],
+      {},
+      [{ id: 'j1', roomId: loaded.roomId, clueId: clue.id, playerId: bob.playerId, idempotencyKey: key, imagePath: 's.jpg', outcome: 'pending', points: null, evidence: null, createdAt: T0 }],
+    );
+    const pending = stream(code, bob.token).then((r) => r);
+    await wait(120);
+    clock = new Date(clock.getTime() + 120);
+    const got = views((await pending).body);
+    const last = got[got.length - 1]!.view;
+    expect(last.myClues.find((c: { id: string }) => c.id === clue.id).submission).toMatchObject({ pending: false, result: { outcome: 'judge_busy' } });
+  });
+
   test('requires a valid session token in the query', async () => {
     const { code } = await room();
     expect((await request(app).get(`/rooms/${code}/events`)).status).toBe(401);

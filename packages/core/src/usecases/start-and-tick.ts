@@ -2,6 +2,7 @@ import { advanceClock, startGame } from '../domain/game';
 import { GameError } from '../domain/errors';
 import type { Game, IdGen, Rng } from '../domain/types';
 import type { GameRepository } from '../ports';
+import { expireJudgements } from './judging';
 import { updateGame } from './rooms';
 
 export interface ClockDeps {
@@ -35,10 +36,11 @@ export async function tick(deps: ClockDeps, code: string): Promise<Game> {
   for (let attempt = 0; ; attempt++) {
     const game = await deps.games.loadByCode(code);
     if (!game) throw new GameError('not_found', 'Room not found');
-    const { game: next, events } = advanceClock(game, deps.now());
+    const { game: clocked, events } = advanceClock(game, deps.now());
+    const { game: next, submissions } = expireJudgements(clocked, deps.now());
     if (next === game) return game;
     try {
-      return await deps.games.save(next, events);
+      return await deps.games.save(next, events, undefined, submissions);
     } catch (e) {
       if (!(e instanceof GameError) || e.code !== 'version_conflict' || attempt >= MAX_TICK_ATTEMPTS) throw e;
     }

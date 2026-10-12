@@ -34,6 +34,14 @@ describe('announcements', () => {
     expect(announcementFor(item('game_started', 'The hunt is on!'))).toBeNull();
   });
 
+  test('the hunter skips their own target_found line; other finds and legacy items still announce', () => {
+    const own = { ...item('target_found', 'Ann found a target (+900)'), hunterId: 'a' };
+    expect(announcementFor(own, 'a')).toBeNull();
+    expect(announcementFor(own, 'b')).toMatchObject({ state: 'celebrating', clip: 'find' });
+    expect(announcementFor(item('target_found', 'Ann found a target (+900)'), 'a')).toMatchObject({ state: 'celebrating', clip: 'find' });
+    expect(announcementFor(own)).toMatchObject({ state: 'celebrating', clip: 'find' });
+  });
+
   test('only items the viewer has not seen are fresh', () => {
     const feed = [item('target_found', 'a', '2026-10-11T10:00:01.000Z'), item('solo_mode', 'b', '2026-10-11T10:00:02.000Z')];
     const seen = new Set([feedKey(feed[0]!)]);

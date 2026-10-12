@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SubmitResult } from './api';
 
 const iso = z.iso.datetime();
 const nullableIso = iso.nullable();
@@ -20,9 +21,10 @@ export const ClueView = z.object({
   hintStatus: z.enum(['ready', 'pending', 'unavailable']).nullable(),
   secondClueUsed: z.boolean(),
   issuedAt: iso,
+  submission: z.object({ id: z.string(), pending: z.boolean(), result: SubmitResult.nullable() }).nullable().optional(),
 });
 
-export const FeedItem = z.object({ at: iso, type: z.string(), text: z.string(), photoUrl: url });
+export const FeedItem = z.object({ at: iso, type: z.string(), text: z.string(), photoUrl: url, hunterId: z.string().optional() });
 
 export const RecapItem = z.object({
   targetId: z.string(),

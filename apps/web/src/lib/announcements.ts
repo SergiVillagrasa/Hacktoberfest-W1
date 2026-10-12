@@ -12,7 +12,8 @@ export interface Announcement {
 export const feedKey = (item: FeedItem) => `${item.at}|${item.type}|${item.text}`;
 
 /** How the host reacts to something that just happened in the game. */
-export function announcementFor(item: FeedItem): Announcement | null {
+export function announcementFor(item: FeedItem, ownPlayerId?: string): Announcement | null {
+  if (item.type === 'target_found' && item.hunterId !== undefined && item.hunterId === ownPlayerId) return null;
   switch (item.type) {
     case 'target_found':
       return { state: 'celebrating', line: item.text, clip: 'find' };

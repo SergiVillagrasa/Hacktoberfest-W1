@@ -2,8 +2,9 @@ import { PGlite } from '@electric-sql/pglite';
 import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { beforeEach, describe, expect, test } from 'vitest';
-import type { Game } from '@snaphunt/core';
+import type { Game, StoredSubmission } from '@snaphunt/core';
 import { createGameRepository } from '../src/db/game-repository';
+import { createSubmissionRepository } from '../src/db/submission-repository';
 import * as schema from '../src/db/schema';
 
 const T0 = new Date('2026-10-11T10:00:00.000Z');
@@ -37,13 +38,15 @@ function makeGame(): Game {
 }
 
 let repo: ReturnType<typeof createGameRepository>;
+let db: Parameters<typeof createSubmissionRepository>[0];
 let game: Game;
 let hashes: Record<string, string>;
 
 beforeEach(async () => {
-  const db = drizzle(new PGlite(), { schema });
-  await migrate(db, { migrationsFolder: new URL('../src/db/migrations', import.meta.url).pathname });
-  repo = createGameRepository(db as never);
+  const client = drizzle(new PGlite(), { schema });
+  await migrate(client, { migrationsFolder: new URL('../src/db/migrations', import.meta.url).pathname });
+  db = client as never;
+  repo = createGameRepository(db);
   game = makeGame();
   hashes = { [game.players[0]!.id]: 'hash-a', [game.players[1]!.id]: 'hash-b' };
   await repo.create(game, hashes);
@@ -97,6 +100,45 @@ describe('game repository', () => {
     await repo.save(game, []);
     expect(await repo.findPlayerByTokenHash('hash-b')).toEqual({ roomCode: 'ABCDE', playerId: game.players[1]!.id });
     expect(await repo.findPlayerByTokenHash('nope')).toBeNull();
+  });
+
+  test('a clue judgement round-trips through save and load, pending and final', async () => {
+    const judgement = { id: 's1', idempotencyKey: 'k1', imagePath: 's.jpg', startedAt: 1, expiresAt: 2, result: null };
+    const pending: Game = { ...game, clues: [{ ...game.clues[0]!, judgement }] };
+    await repo.save(pending, []);
+    expect((await repo.loadByCode('ABCDE'))!.clues[0]!.judgement).toEqual(judgement);
+    const final = { ...judgement, result: { outcome: 'match' as const, submissionId: 's1', pending: false, points: 900, attemptsLeft: 5, message: 'You found it!' } };
+    const done = { ...(await repo.loadByCode('ABCDE'))!, clues: [{ ...game.clues[0]!, judgement: final }] };
+    await repo.save(done, []);
+    expect((await repo.loadByCode('ABCDE'))!.clues[0]!.judgement).toEqual(final);
+  });
+
+  test('save records submissions atomically and a conflict writes no row', async () => {
+    const subs = createSubmissionRepository(db);
+    const sub = (key: string, outcome: StoredSubmission['outcome'] = 'pending'): StoredSubmission => ({
+      id: id(), roomId: game.roomId, clueId: game.clues[0]!.id, playerId: game.players[0]!.id, idempotencyKey: key, imagePath: 's.jpg', outcome, points: null, evidence: null, createdAt: T0,
+    });
+    await repo.save(game, [], {}, [sub('k1')]);
+    expect(await subs.findByKey('k1')).toMatchObject({ outcome: 'pending', clueId: game.clues[0]!.id });
+    const stale: Game = { ...game, version: 99 };
+    await expect(repo.save(stale, [], {}, [sub('k2')])).rejects.toMatchObject({ code: 'version_conflict' });
+    expect(await subs.findByKey('k2')).toBeNull();
+  });
+
+  test('a submission update on the same key and owner applies; a different owner is forbidden and rolls back', async () => {
+    const subs = createSubmissionRepository(db);
+    const stored = (await repo.loadByCode('ABCDE'))!;
+    const base: StoredSubmission = {
+      id: id(), roomId: stored.roomId, clueId: stored.clues[0]!.id, playerId: stored.players[0]!.id, idempotencyKey: 'k9', imagePath: 's.jpg', outcome: 'pending', points: null, evidence: null, createdAt: T0,
+    };
+    await repo.save(stored, [], {}, [base]);
+    const v1 = (await repo.loadByCode('ABCDE'))!;
+    await repo.save(v1, [], {}, [{ ...base, outcome: 'match', points: 900, evidence: { sameObject: true } }]);
+    expect(await subs.findByKey('k9')).toMatchObject({ outcome: 'match', points: 900, imagePath: 's.jpg' });
+    const v2 = (await repo.loadByCode('ABCDE'))!;
+    await expect(repo.save(v2, [], {}, [{ ...base, id: id(), playerId: stored.players[1]!.id, outcome: 'no_match' }])).rejects.toMatchObject({ code: 'forbidden' });
+    expect(await repo.version('ABCDE')).toBe(v2.version);
+    expect(await subs.findByKey('k9')).toMatchObject({ outcome: 'match', points: 900 });
   });
 
   test('new players need a token and removed players disappear', async () => {

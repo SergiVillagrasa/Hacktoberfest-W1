@@ -1,7 +1,7 @@
-import { and, asc, desc, eq, notInArray } from 'drizzle-orm';
-import { GameError, type Clue, type DomainEvent, type Game, type GameRepository, type Player, type StoredEvent, type Target } from '@snaphunt/core';
+import { and, asc, desc, eq, notInArray, sql } from 'drizzle-orm';
+import { GameError, type Clue, type DomainEvent, type Game, type GameRepository, type Player, type StoredEvent, type StoredSubmission, type Target } from '@snaphunt/core';
 import type { Db } from './client';
-import { clues, events, players, rooms, targets } from './schema';
+import { clues, events, players, rooms, submissions, targets } from './schema';
 
 const roomColumns = (g: Game) => ({
   code: g.code,
@@ -30,7 +30,7 @@ async function writeChildren(tx: Db, game: Game, tokenHashes: Record<string, str
     await tx.insert(targets).values({ id: t.id, roomId, ownerId: t.ownerId, ...fields }).onConflictDoUpdate({ target: targets.id, set: fields });
   }
   for (const c of game.clues) {
-    const fields = { issuedAt: c.issuedAt, secondClueUsed: c.secondClueUsed, judgeBusyServed: c.judgeBusyServed, status: c.status };
+    const fields = { issuedAt: c.issuedAt, secondClueUsed: c.secondClueUsed, judgeBusyServed: c.judgeBusyServed, status: c.status, judgement: c.judgement ?? null };
     await tx.insert(clues).values({ id: c.id, roomId, targetId: c.targetId, hunterId: c.hunterId, kind: c.kind, ...fields }).onConflictDoUpdate({ target: clues.id, set: fields });
   }
   if (evs.length) await tx.insert(events).values(evs.map(({ type, at, ...payload }) => ({ roomId, at, type, payload })));
@@ -80,7 +80,7 @@ export function createGameRepository(db: Db): GameRepository {
         version: room.version,
         players: ps.map(({ roomId: _r, tokenHash: _t, ...p }) => p as Player),
         targets: ts.map(({ roomId: _r, ...t }) => t as Target),
-        clues: cs.map(({ roomId: _r, ...c }) => c as Clue),
+        clues: cs.map(({ roomId: _r, judgement, ...c }) => ({ ...c, judgement: judgement ?? undefined }) as Clue),
       };
     },
 
@@ -89,7 +89,7 @@ export function createGameRepository(db: Db): GameRepository {
       return row ?? null;
     },
 
-    async save(game, evs, tokenHashes = {}) {
+    async save(game, evs, tokenHashes = {}, batch: StoredSubmission[] = []) {
       return db.transaction(async (tx) => {
         const updated = await tx
           .update(rooms)
@@ -98,6 +98,30 @@ export function createGameRepository(db: Db): GameRepository {
           .returning({ version: rooms.version });
         if (updated.length === 0) throw new GameError('version_conflict', 'Game changed, please retry');
         await writeChildren(tx, game, tokenHashes, evs);
+        if (batch.length) {
+          const written = await tx
+            .insert(submissions)
+            .values(
+              batch.map((s) => ({
+                id: s.id,
+                roomId: s.roomId,
+                clueId: s.clueId,
+                playerId: s.playerId,
+                idempotencyKey: s.idempotencyKey,
+                imagePath: s.imagePath,
+                outcome: s.outcome,
+                evidence: { points: s.points, detail: s.evidence },
+                createdAt: s.createdAt,
+              })),
+            )
+            .onConflictDoUpdate({
+              target: submissions.idempotencyKey,
+              set: { outcome: sql`excluded.outcome`, evidence: sql`excluded.evidence` },
+              setWhere: and(eq(submissions.id, sql`excluded.id`), eq(submissions.roomId, sql`excluded.room_id`), eq(submissions.clueId, sql`excluded.clue_id`), eq(submissions.playerId, sql`excluded.player_id`)),
+            })
+            .returning({ id: submissions.id });
+          if (written.length !== batch.length) throw new GameError('forbidden', 'Idempotency key belongs to another submission');
+        }
         return { ...game, version: updated[0]!.version };
       });
     },
