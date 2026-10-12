@@ -43,8 +43,8 @@ Play safely: watch where you are walking, only photograph objects you are
 allowed to, and be considerate of people around you. The app asks for camera
 access (to take photos) and plays audio clues through the browser.
 
-The game has been playtested with 3 people in a home using common household
-objects. Outdoor play is possible but has not been tested yet.
+The game has been playtested with 3 people at home using common household
+objects, and in a real case outdoors with some objects.
 
 ## Current stack
 
@@ -79,6 +79,37 @@ image editing) sit behind adapter interfaces so they can be swapped or faked.
 Original target photos remain private to their creators; other hunters receive
 only authorized clues, not the reference photos. Provider credentials stay on
 the backend and are never exposed to the frontend.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Phones["Players' phones"]
+    Web["Next.js web app<br/>camera · clues · leaderboard"]
+  end
+  subgraph Backend["Backend (Express API on Vercel)"]
+    Routes["Routes + controllers<br/>Zod validation · guest sessions"]
+    SSE["SSE room updates"]
+    Core["Core game rules<br/>assignments · scoring · eliminations"]
+    subgraph Adapters["Adapters (ports implemented in packages/infra)"]
+      Vision["Mastra vision agent"]
+      Voice["ElevenLabs TTS"]
+      Hints["fal image edit"]
+      DB["Drizzle repositories"]
+      Store["Supabase Storage<br/>private photos"]
+    end
+  end
+  Web -- "HTTP: photos, finds" --> Routes
+  SSE -- "live room state" --> Web
+  Routes --> Core
+  Core --> Vision & Voice & Hints & DB & Store
+  Core --> SSE
+  Vision --> Model["Qwen3.8-27B via Nebius<br/>(or Gemma 4 31B IT)"]
+  DB --> PG[("PostgreSQL (Supabase)")]
+```
+
+The AI providers return evidence and media; only the core game rules change
+scores, assignments, or eliminations.
 
 More detail:
 
