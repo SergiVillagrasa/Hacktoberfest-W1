@@ -10,9 +10,8 @@ against other hunters. A cheerful pug hosts the experience.
 Built for the Hacktoberfest "Touch Grass" challenge: it is a game that gets
 people off their chairs and looking at the real world around them.
 
-## Play the demo
+## Demo
 
-- Live demo: https://sergi-villagrasa.tech/projects/snaphunt
 - Demo video: https://drive.google.com/file/d/1wKuDRf7nL-k8ujCB4NbgPSmx_ULod4wN/view?usp=sharing
 
 ## How to play
